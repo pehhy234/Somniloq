@@ -308,6 +308,19 @@ export function useChat(conversationId?: string) {
         await sendMessage('', charId, true)
       }
     },
+    rollbackMessage: async (msgId: string) => {
+      const msgIndex = messages.findIndex(m => m.id === msgId)
+      if (msgIndex === -1) return
+
+      const idsToDelete = messages.slice(msgIndex + 1).map(m => m.id)
+      if (idsToDelete.length === 0) return
+
+      // @ts-expect-error supabase types
+      const { error } = await supabase.from('messages').delete().in('id', idsToDelete)
+      if (error) throw error
+      
+      setMessages(prev => prev.slice(0, msgIndex + 1))
+    },
     getSuggestions: async (_charId: string): Promise<string[]> => {
       // Mocked for now since edge function deploy failed, but structure is ready
       return [

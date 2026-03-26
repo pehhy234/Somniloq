@@ -107,7 +107,7 @@ function AppLayout() {
       {/* Content area – offset for desktop nav, padding-bottom for mobile nav */}
       <main className={cn(
         "min-h-dvh transition-all duration-300",
-        !isRoom && "md:ml-[60px] pb-20 md:pb-0"
+        !isRoom && "md:ml-[80px] pb-20 md:pb-0"
       )}>
         <Routes>
           <Route path="/" element={<LobbyPage />} />

@@ -21,7 +21,7 @@
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
     --ring: 267 100% 72%;
-    --radius: 0.75rem;
+    --radius: 1rem; /* Increased default radius for a softer, premium feel */
   }
 
   .light {
@@ -64,6 +64,7 @@
     min-height: 100dvh;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.01em; /* Subtle premium typography adjustment */
   }
 
   /* Scrollbar styling */
@@ -79,42 +80,49 @@
   ::-webkit-scrollbar-thumb {
     background: hsl(var(--border));
     border-radius: 3px;
+    border: 1px solid transparent;
+    background-clip: content-box;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground));
+    background: hsl(var(--muted-foreground)/0.3);
   }
 }
 
-/* Utility classes for CSS variables */
+/* Optimized Design System Tokens */
 @layer utilities {
-  .bg-background { background-color: hsl(var(--background)); }
-  .bg-muted { background-color: hsl(var(--muted)); }
-  .bg-card { background-color: hsl(var(--card)); }
-  .bg-accent { background-color: hsl(var(--accent)); }
-  .bg-primary { background-color: hsl(var(--primary)); }
-  .bg-secondary { background-color: hsl(var(--secondary)); }
-  .bg-destructive { background-color: hsl(var(--destructive)); }
-  .text-foreground { color: hsl(var(--foreground)); }
-  .text-muted-foreground { color: hsl(var(--muted-foreground)); }
-  .text-primary { color: hsl(var(--primary)); }
-  .text-primary-foreground { color: hsl(var(--primary-foreground)); }
-  .text-destructive-foreground { color: hsl(var(--destructive-foreground)); }
-  .border-border { border-color: hsl(var(--border)); }
-  .ring-ring { --tw-ring-color: hsl(var(--ring)); }
+  /* Dynamic Glass Effect (Standardized) */
+  .glass-sm {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
 
-  /* Glass morphism */
-  .glass {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+  .glass-md {
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .glass-lg {
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(24px);
     border: 1px solid rgba(255, 255, 255, 0.1);
   }
 
-  .glass-dark {
-    background: rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+  .glass-pill {
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(32px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.4);
   }
+
+  /* Typography shortcuts */
+  .text-tiny { font-size: 0.75rem; line-height: 1rem; } /* Equivalent to text-xs, min supported scale */
+  .text-label { font-size: 0.8rem; letter-spacing: 0.05em; font-weight: 600; text-transform: uppercase; opacity: 0.4; }
+  
+  /* Space optimizations */
+  .p-safe-top { padding-top: env(safe-area-inset-top); }
+  .p-safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
 }
+

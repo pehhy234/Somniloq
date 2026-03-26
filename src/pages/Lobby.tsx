@@ -70,7 +70,7 @@ export default function LobbyPage() {
   return (
     <div className="min-h-dvh bg-background">
       {/* ── Top search area ── */}
-      <div className="sticky top-0 z-40 bg-background/60 backdrop-blur-2xl border-b border-border/40 shadow-sm px-4 pt-4 pb-3 space-y-3">
+      <div className="sticky top-0 z-40 bg-background/60 backdrop-blur-2xl border-b border-border/40 shadow-sm px-4 md:px-8 pt-4 md:pt-6 pb-3 md:pb-5 space-y-3">
         {/* Logo (visible only when not logged in / no desktop nav) */}
         <div className="flex items-center gap-2 md:hidden">
           <div
@@ -144,7 +144,7 @@ export default function LobbyPage() {
       </div>
 
       {/* ── Content ── */}
-      <div className="px-4 py-4">
+      <div className="px-4 md:px-8 py-4 md:py-8">
         {/* Filter info */}
         {(search || selectedTags.length > 0) && (
           <div className="flex items-center gap-2 mb-3 text-sm text-muted-foreground">
@@ -178,8 +178,8 @@ export default function LobbyPage() {
               ))}
             </div>
 
-            {/* Desktop: 3-column grid */}
-            <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {/* Desktop: More dense grid to shrink card sizes */}
+            <div className="hidden md:grid md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
               {characters.map((c) => (
                 <CharacterCard
                   key={c.id}

@@ -8,48 +8,56 @@ interface CharacterCardProps {
 }
 
 export function CharacterCard({ character, variant = 'horizontal', onClick }: CharacterCardProps) {
-  const { name, description, tags, avatar_url, author } = character
+  const { name, description, avatar_url, author } = character
 
   if (variant === 'vertical') {
     return (
       <div
         onClick={onClick}
-        className="group cursor-pointer rounded-[24px] overflow-hidden border border-border/50 bg-card/50 backdrop-blur-sm hover:border-primary/30 hover:bg-card transition-all duration-400 ease-[cubic-bezier(0.2,0.8,0.2,1)] hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-1 relative"
+        className="group cursor-pointer rounded-3xl overflow-hidden glass-md border border-white/5 hover:border-primary/40 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/20 hover:-translate-y-1 relative aspect-[4/5]"
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10" />
-        {/* Image */}
-        <div className="aspect-square overflow-hidden bg-muted relative">
+        {/* Main Character Image */}
+        <div className="absolute inset-0 bg-muted z-0">
           {avatar_url ? (
             <img
               src={avatar_url}
               alt={name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
             />
           ) : (
             <div
-              className="w-full h-full flex items-center justify-center text-4xl font-bold text-white/60"
-              style={{ background: `linear-gradient(135deg, hsl(${stringToHue(name)}, 60%, 35%), hsl(${stringToHue(name) + 40}, 60%, 25%))` }}
+              className="w-full h-full flex items-center justify-center text-5xl font-black text-white/40"
+              style={{ background: `linear-gradient(135deg, hsl(${stringToHue(name)}, 70%, 25%), hsl(${stringToHue(name) + 40}, 70%, 15%))` }}
             >
               {getAvatarFallback(name)}
             </div>
           )}
-          {/* Tags overlay */}
-          {tags.length > 0 && (
-            <div className="absolute bottom-2 left-2 flex flex-wrap gap-1">
-              {tags.slice(0, 2).map((tag) => (
-                <span key={tag} className="px-2 py-0.5 rounded-full text-[10px] font-medium glass-dark text-white/80">
-                  {tag}
-                </span>
-              ))}
+        </div>
+
+        {/* Bottom Overlay Info (45% height) */}
+        <div className="absolute inset-x-0 bottom-0 h-[45%] z-20 flex flex-col justify-end px-4 pb-5 pt-8 bg-gradient-to-t from-black/90 via-black/70 to-transparent">
+          <div className="space-y-2">
+            {/* 1. Name */}
+            <h3 className="font-bold text-white text-[16px] leading-tight drop-shadow-xl group-hover:text-primary transition-colors duration-300">
+              {name}
+            </h3>
+            
+            {/* 2. Description (Clamped - increased lines since we have 45% height) */}
+            <p className="text-[12px] text-white/60 leading-relaxed line-clamp-3 font-medium">
+              {description || '暫無介紹'}
+            </p>
+
+            {/* 3. Author (Aligned Right) */}
+            <div className="flex justify-end pt-1">
+              <span className="text-[10px] font-black text-primary/80 tracking-widest uppercase">
+                BY {author?.username ?? 'ANONYMOUS'}
+              </span>
             </div>
-          )}
+          </div>
         </div>
-        {/* Info */}
-        <div className="p-3 space-y-1.5">
-          <h3 className="font-bold text-foreground text-sm leading-tight">{name}</h3>
-          <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{description || '暫無介紹'}</p>
-          <p className="text-[11px] text-muted-foreground/70">by {author?.username ?? '匿名'}</p>
-        </div>
+
+        {/* Hover Glow Effect */}
+        <div className="absolute inset-0 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-b from-primary/10 via-transparent to-transparent pointer-events-none" />
       </div>
     )
   }
@@ -58,50 +66,40 @@ export function CharacterCard({ character, variant = 'horizontal', onClick }: Ch
   return (
     <div
       onClick={onClick}
-      className="group cursor-pointer flex gap-3 p-3 rounded-[24px] border border-border/50 bg-card/50 backdrop-blur-sm hover:border-primary/30 transition-all duration-400 ease-[cubic-bezier(0.2,0.8,0.2,1)] hover:bg-card hover:shadow-xl hover:shadow-primary/5 active:scale-[0.98] relative overflow-hidden"
+      className="group cursor-pointer flex rounded-[28px] glass-md border border-white/5 active:scale-[0.98] transition-all duration-300 relative overflow-hidden h-[120px]"
     >
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-      {/* Thumbnail (1/3 width) */}
-      <div className="w-24 shrink-0 aspect-[3/4] rounded-xl overflow-hidden bg-muted relative">
+      {/* Thumbnail (1/3 width-ish) - Full height, no padding */}
+      <div className="w-[105px] shrink-0 h-full overflow-hidden bg-white/5 relative shadow-inner">
         {avatar_url ? (
           <img
             src={avatar_url}
             alt={name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
           />
         ) : (
           <div
-            className="w-full h-full flex items-center justify-center text-2xl font-black text-white/70"
-            style={{ background: `linear-gradient(135deg, hsl(${stringToHue(name)}, 70%, 40%), hsl(${stringToHue(name) + 40}, 70%, 30%))` }}
+            className="w-full h-full flex items-center justify-center text-3xl font-black text-white/30"
+            style={{ background: `linear-gradient(135deg, hsl(${stringToHue(name)}, 70%, 30%), hsl(${stringToHue(name) + 40}, 70%, 20%))` }}
           >
             {getAvatarFallback(name)}
           </div>
         )}
       </div>
 
-      {/* Info (2/3 width) */}
-      <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+      {/* Info (2/3 width) - Centered vertically with padding */}
+      <div className="flex-1 min-w-0 flex flex-col justify-center px-4 py-2">
         {/* Name */}
-        <h3 className="font-bold text-foreground text-sm leading-tight">{name}</h3>
+        <h3 className="font-bold text-white text-[15px] leading-snug drop-shadow-sm mb-1">{name}</h3>
         {/* Description */}
-        <p className="text-xs text-muted-foreground leading-relaxed flex-1 my-1.5 line-clamp-3">
+        <p className="text-[12px] text-white/40 leading-relaxed flex-1 line-clamp-2 font-medium">
           {description || '暫無介紹'}
         </p>
-        {/* Tags */}
-        {tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 my-1">
-            {tags.slice(0, 3).map((tag) => (
-              <span
-                key={tag}
-                className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary/15 text-primary border border-primary/20"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
         {/* Author */}
-        <p className="text-[11px] text-muted-foreground/70">by {author?.username ?? '匿名'}</p>
+        <div className="flex justify-end mt-1">
+          <span className="text-[9px] font-black text-primary/60 tracking-widest uppercase">
+            BY {author?.username ?? 'ADMIN'}
+          </span>
+        </div>
       </div>
     </div>
   )

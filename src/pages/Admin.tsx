@@ -167,34 +167,36 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto py-8 px-4 h-full">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-4 border-b border-border">
-        <div className="flex items-center gap-3">
-          <Shield className="w-8 h-8 text-primary" />
-          <h1 className="text-2xl font-bold">系統管理介面</h1>
+    <div className="max-w-6xl mx-auto py-10 px-6 h-full">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-6 border-b border-white/5">
+        <div className="flex items-center gap-4">
+          <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20">
+            <Shield className="w-8 h-8 text-primary" />
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight">System Admin</h1>
         </div>
         
         {/* Tabs */}
-        <div className="flex bg-muted/50 p-1 rounded-xl border border-border">
+        <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5 shadow-inner">
           <button
             onClick={() => setActiveTab('users')}
             className={cn(
-              "flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all",
-              activeTab === 'users' ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              "flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-all",
+              activeTab === 'users' ? "bg-white/10 text-white shadow-lg border border-white/10" : "text-white/40 hover:text-white/80"
             )}
           >
             <Users className="w-4 h-4" />
-            使用者管理
+            Users
           </button>
           <button
             onClick={() => setActiveTab('models')}
             className={cn(
-              "flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all",
-              activeTab === 'models' ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              "flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-all",
+              activeTab === 'models' ? "bg-white/10 text-white shadow-lg border border-white/10" : "text-white/40 hover:text-white/80"
             )}
           >
             <Database className="w-4 h-4" />
-            模型管理
+            Models
           </button>
         </div>
       </div>
@@ -221,31 +223,31 @@ export default function AdminPage() {
               )}
             </h2>
             
-            <div className="bg-muted/30 border border-border rounded-xl overflow-hidden glass">
+            <div className="glass-md rounded-3xl overflow-hidden shadow-2xl">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse min-w-[600px]">
                   <thead>
-                    <tr className="border-b border-border bg-muted/50">
-                      <th className="p-4 text-sm font-medium text-foreground">用戶名稱</th>
-                      <th className="p-4 text-sm font-medium text-foreground">註冊時間</th>
-                      <th className="p-4 text-center text-sm font-medium text-foreground">帳號狀態</th>
-                      <th className="p-4 text-right text-sm font-medium text-foreground">操作</th>
+                    <tr className="border-b border-white/5 bg-white/[0.02]">
+                      <th className="p-5 text-[11px] font-bold text-white/30 uppercase tracking-widest">User</th>
+                      <th className="p-5 text-[11px] font-bold text-white/30 uppercase tracking-widest">Joined</th>
+                      <th className="p-5 text-center text-[11px] font-bold text-white/30 uppercase tracking-widest">Status</th>
+                      <th className="p-5 text-right text-[11px] font-bold text-white/30 uppercase tracking-widest">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/50">
                     {profiles.map(profile => (
                       <tr key={profile.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="p-4">
-                          <div className="flex items-center gap-3">
+                        <td className="p-5">
+                          <div className="flex items-center gap-4">
                             <img 
                               src={profile.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + profile.username} 
                               alt={profile.username}
-                              className="w-10 h-10 rounded-full bg-muted object-cover"
+                              className="w-11 h-11 rounded-full bg-white/5 object-cover ring-1 ring-white/10"
                             />
                             <div>
-                              <p className="font-semibold text-sm">{profile.username}</p>
-                              <p className="text-xs text-muted-foreground mt-0.5 tracking-wider font-mono">
-                                {profile.id.split('-')[0]}...
+                              <p className="font-bold text-[15px] text-white/90">{profile.username}</p>
+                              <p className="text-[10px] text-white/20 mt-0.5 tracking-widest font-mono uppercase">
+                                ID: {profile.id.split('-')[0]}
                               </p>
                             </div>
                           </div>
@@ -306,23 +308,23 @@ export default function AdminPage() {
                   })
                   setIsEditingModel('new')
                 }}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white hover:opacity-90 transition-all shadow-lg shadow-primary/20"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-primary text-white font-bold text-sm hover:brightness-110 transition-all shadow-xl shadow-primary/20"
               >
                 <Plus className="w-4 h-4" />
-                新增模型
+                Add Model
               </button>
             </div>
 
-            <div className="bg-muted/30 border border-border rounded-xl overflow-hidden glass">
+            <div className="glass-md rounded-3xl overflow-hidden shadow-2xl">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse min-w-[800px]">
                   <thead>
-                    <tr className="border-b border-border bg-muted/50">
-                      <th className="p-4 text-sm font-medium text-foreground">名稱 / 供應商</th>
-                      <th className="p-4 text-sm font-medium text-foreground">模型 ID</th>
-                      <th className="p-4 text-sm font-medium text-foreground">分類 / 標籤</th>
-                      <th className="p-4 text-center text-sm font-medium text-foreground">狀態</th>
-                      <th className="p-4 text-right text-sm font-medium text-foreground">操作</th>
+                    <tr className="border-b border-white/5 bg-white/[0.02]">
+                      <th className="p-5 text-tiny font-bold text-white/30 uppercase tracking-widest">Provider / Name</th>
+                      <th className="p-5 text-tiny font-bold text-white/30 uppercase tracking-widest">Model ID</th>
+                      <th className="p-5 text-tiny font-bold text-white/30 uppercase tracking-widest">Categories</th>
+                      <th className="p-5 text-center text-tiny font-bold text-white/30 uppercase tracking-widest">Status</th>
+                      <th className="p-5 text-right text-tiny font-bold text-white/30 uppercase tracking-widest">Options</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/50">
@@ -406,11 +408,16 @@ export default function AdminPage() {
 
       {/* Edit Model Overlay */}
       {isEditingModel && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-background border border-border w-full max-w-2xl rounded-[28px] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="px-6 py-4 border-b border-border flex items-center justify-between">
-              <h3 className="font-bold">{isEditingModel === 'new' ? '新增模型' : '編輯模型'}</h3>
-              <button onClick={() => setIsEditingModel(null)}><X className="w-5 h-5 opacity-60" /></button>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="glass-lg w-full max-w-2xl rounded-[32px] overflow-hidden shadow-[0_32px_128px_rgba(0,0,0,0.8)] animate-in zoom-in-95 duration-300">
+            <div className="p-8 border-b border-white/5 flex items-center justify-between">
+              <h3 className="text-xl font-bold tracking-tight">{isEditingModel === 'new' ? 'Create Model' : 'Edit Model'}</h3>
+              <button 
+                onClick={() => setIsEditingModel(null)}
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 transition-colors"
+              >
+                <X className="w-5 h-5 text-white/60" />
+              </button>
             </div>
             
             <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
