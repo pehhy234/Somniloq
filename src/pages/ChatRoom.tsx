@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { createPortal } from 'react-dom'
 import { 
   ArrowLeft, Send, Loader2, 
   Lightbulb, Trash2,
   ChevronDown, ChevronUp,
-  Play, X, Settings,
+  Play, X, Menu,
   RotateCcw, PenLine
 } from 'lucide-react'
 import { useChat, ChatMessage } from '@/hooks/useChat'
@@ -129,90 +130,132 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
   return (
     <div className="flex-1 flex flex-col relative h-full overflow-hidden bg-black selection:bg-primary/40">
       {/* ── 懸浮導覽列 (Floating Pill Header) ── */}
-      <div className="absolute top-0 left-0 right-0 z-50 p-3 pt-safe-top flex items-center justify-between pointer-events-none">
-        {/* 左側頭像膠囊 */}
+      <div 
+        className="absolute left-[2px] right-[2px] z-50 flex items-center justify-between pointer-events-none"
+        style={{ top: 'calc(env(safe-area-inset-top) + 2px)' }}
+      >
+        {/* 左側角色膠囊 */}
         <div className="flex items-center gap-2 pointer-events-auto">
-          <div className="flex items-center gap-2.5 px-3 py-2 rounded-full glass-pill transition-all duration-300 hover:bg-black/60 hover:border-white/20">
+          <div className="flex items-center gap-2 pl-1 pr-3 py-1.5 rounded-full glass-pill transition-all duration-300 hover:bg-black/60 hover:border-white/20">
             {isMobilePage && (
               <button 
-                onClick={() => navigate(-1)} 
-                className="w-8 h-8 flex items-center justify-center text-white/50 hover:text-white/90 transition-all duration-150 active:scale-90 rounded-xl"
+                onClick={() => navigate('/chat')} 
+                className="w-8 h-8 flex items-center justify-center rounded-full text-white/50 hover:text-white transition-all duration-300 hover:bg-white/8"
               >
-                <ArrowLeft className="w-4.5 h-4.5" />
+                <ArrowLeft className="w-4 h-4" />
               </button>
             )}
             <img 
               src={currentConv.character.avatar_url || ''} 
-              className="w-9 h-9 rounded-xl object-cover ring-1 ring-white/10 shrink-0 shadow-sm" 
+              className="w-8 h-8 rounded-full object-cover ring-1 ring-white/10 shrink-0 shadow-sm" 
             />
-            <div className="flex flex-col pr-1">
-              <span className="text-[14px] font-bold text-white leading-tight tracking-tight">
+            <div className="flex flex-col">
+              <span className="text-[13px] font-bold text-white leading-tight tracking-tight">
                 {currentConv.character.name}
               </span>
-              <span className="text-[10px] text-white/40 font-bold tracking-widest uppercase">AI Character</span>
             </div>
           </div>
         </div>
 
-        {/* 右側膠囊 */}
-        <div className="flex items-center gap-2 pointer-events-auto">
-          <ModelSwitcher />
-          <button className="w-11 h-11 flex items-center justify-center rounded-full glass-pill text-white/60 hover:text-white transition-all duration-300 hover:bg-black/60">
-            <Settings className="w-4.5 h-4.5" />
+        {/* 右側功能膠囊 (Merged Block) */}
+        <div className="flex items-center gap-0.5 px-1 py-1.5 rounded-full glass-pill pointer-events-auto transition-all duration-300 hover:bg-black/60 hover:border-white/20">
+          <ModelSwitcher minimalist={true} />
+          <div className="w-[1px] h-3.5 bg-white/10 mx-0.5" />
+          <button className="w-8 h-8 flex items-center justify-center rounded-full text-white/50 hover:text-white transition-all duration-300 hover:bg-white/8">
+            <Menu className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {/* ── 沉浸式背景 ── */}
       <div 
-        className="absolute inset-0 bg-cover bg-center pointer-events-none z-0 scale-105"
+        className="absolute inset-0 bg-cover bg-center pointer-events-none z-0"
         style={{
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.85) 60%, rgba(0,0,0,0.95)), url(${currentConv.character.avatar_url || ''})`,
-          filter: 'brightness(0.4) contrast(1.1) blur(40px)',
+          backgroundImage: `linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.4) 40%, rgba(0,0,0,0.95)), url(${currentConv.character.avatar_url || ''})`,
+          filter: 'brightness(0.7)',
         }}
       />
       
       {/* ── 對話內容區域 (Scrollable) ── */}
       <div className="flex-1 overflow-y-auto px-4 relative z-10 hide-scrollbar scroll-smooth flex flex-col">
-        {/* 頂部留空 (給 Header) */}
-        <div className="h-28 shrink-0" />
+        {/* 頂部增加墊片，確保在任何裝置都不會被遮擋 */}
+        <div className="pt-16 pt-safe-top shrink-0" />
 
         {/* 免責聲明 */}
-        <div className="flex justify-center mb-8 shrink-0">
-          <span className="text-[11px] text-white/30 font-bold bg-white/5 px-4 py-1.5 rounded-full border border-white/5 tracking-wider uppercase">
-            ⚡ AI Generated Content
+        <div className="flex justify-center mb-2 shrink-0">
+          <span className="text-[11px] text-white/30 font-bold bg-white/5 px-4 py-1.5 rounded-full border border-white/5 tracking-wider">
+            ⚡ 角色所說的話都由AI生成，請勿當真
           </span>
         </div>
 
-        {/* 角色簡介卡 */}
-        <div className={cn(
-          "mx-auto mb-10 w-full max-w-lg p-5 rounded-3xl glass-md shadow-2xl relative transition-all duration-300",
-          showInfo ? "opacity-100" : "opacity-90 hover:opacity-100"
-        )}>
+        {/* 角色簡介卡 (簡短版) */}
+        <div 
+          onClick={() => setShowInfo(true)}
+          className={cn(
+            "mx-auto mb-5 w-full max-w-lg p-5 rounded-3xl glass-md shadow-2xl relative transition-all duration-300",
+            "opacity-90 hover:opacity-100 cursor-pointer"
+          )}
+        >
           <div className="flex items-start gap-3">
-            <div className="flex-1 min-w-0">
-              <p className={cn("text-[13px] font-semibold text-white/80 leading-relaxed", (!showInfo && currentConv.character.prompt) && "line-clamp-2")}>
+            <div className="flex-1 min-w-0 flex flex-col items-end">
+              <p className="text-[13px] font-semibold text-white/80 leading-relaxed w-full text-left line-clamp-2">
                 {currentConv.character.description}
               </p>
-              {(currentConv.character.prompt && currentConv.character.prompt.trim() !== '') && (
-                !showInfo ? (
-                  <button onClick={() => setShowInfo(true)} className="mt-2 text-[11px] font-bold text-primary/70 hover:text-primary transition-all duration-150 flex items-center gap-1">
-                    更多 <ChevronDown className="w-3 h-3" />
-                  </button>
-                ) : (
-                  <div className="mt-3 pt-3 border-t border-white/8 animate-in fade-in slide-in-from-top-1 duration-200">
-                    <p className="text-[11px] text-white/35 leading-relaxed italic font-medium">
-                      {currentConv.character.prompt}
-                    </p>
-                    <button onClick={() => setShowInfo(false)} className="mt-2 text-[11px] font-bold text-primary/70 hover:text-primary transition-colors duration-150">
-                      收起 <ChevronUp className="w-3 h-3 inline" />
-                    </button>
-                  </div>
-                )
-              )}
+              <button className="mt-0.5 text-[11px] font-bold text-primary/70 hover:text-primary transition-all duration-150 flex items-center gap-1">
+                更多 <ChevronDown className="w-3 h-3" />
+              </button>
             </div>
           </div>
         </div>
+
+        {/* 角色詳細資訊 (懸浮式) */}
+        {showInfo && createPortal(
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+            {/* 背景點擊收起 */}
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setShowInfo(false)} />
+            
+            {/* 彈窗主體 */}
+            <div className="relative w-full max-w-md p-6 rounded-[32px] glass-md border border-white/10 shadow-2xl animate-in zoom-in-95 duration-200">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <img src={currentConv.character.avatar_url || ''} className="w-12 h-12 rounded-2xl object-cover border border-white/10" />
+                  <h3 className="text-lg font-bold text-white">{currentConv.character.name}</h3>
+                </div>
+                <button 
+                  onClick={() => setShowInfo(false)}
+                  className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 text-white/40 hover:text-white hover:bg-white/10 transition-all"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                <div>
+                  <h4 className="text-[11px] font-bold text-white/30 uppercase tracking-widest mb-3">角色簡介</h4>
+                  <p className="text-[15px] text-white/80 leading-relaxed font-medium">
+                    {currentConv.character.description}
+                  </p>
+                </div>
+
+                {(currentConv.character.prompt && currentConv.character.prompt.trim() !== '') && (
+                  <div>
+                    <h4 className="text-[11px] font-bold text-white/30 uppercase tracking-widest mb-3">設定秘辛</h4>
+                    <p className="text-[13px] text-white/40 italic leading-relaxed">
+                      {currentConv.character.prompt}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <button 
+                onClick={() => setShowInfo(false)}
+                className="w-full mt-8 py-4 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-bold text-sm transition-all active:scale-[0.98]"
+              >
+                我知道了
+              </button>
+            </div>
+          </div>,
+          document.body
+        )}
 
         {/* 訊息清單 */}
         {messages.map((msg) => {
