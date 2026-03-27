@@ -57,47 +57,27 @@ function AppLayout() {
     )
   }
 
-  // Profile fetch failed completely (network error etc)
-  if (isAuthenticated && profile === null) {
+  // Profile load failed with a specific error
+  if (isAuthenticated && profileError && !profile) {
     return (
       <div className="min-h-dvh flex flex-col items-center justify-center bg-background p-6 text-center space-y-4">
-        <h2 className="text-xl font-bold text-foreground">無法載入個人檔案</h2>
+        <h2 className="text-xl font-bold text-foreground">個人數據加載異常</h2>
         <p className="text-muted-foreground mt-2 max-w-sm">
-          請檢查網路連線後重試。<br/>
+          系統暫時無法獲取您的權限與設定資訊。<br/>
           <span className="text-red-400 text-xs mt-2 block break-words">
-            錯誤訊息: {profileError || '尚未知曉'}
+            錯誤詳情: {profileError}
           </span>
         </p>
         <div className="flex gap-3 mt-4">
-          <button onClick={refreshProfile} className="px-4 py-2 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90">重試</button>
-          <button onClick={signOut} className="px-4 py-2 rounded-xl text-sm font-medium border border-border text-foreground hover:bg-accent transition-all">登出</button>
+          <button onClick={refreshProfile} className="px-4 py-2 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-[0.98]">重新連線</button>
+          <button onClick={signOut} className="px-4 py-2 rounded-xl text-sm font-medium border border-border text-foreground hover:bg-accent transition-all">安全登出</button>
         </div>
       </div>
     )
   }
 
   // Blocking inactive accounts (prevents routing loops)
-  if (isAuthenticated && !isActive) {
-    return (
-      <div className="min-h-dvh flex flex-col items-center justify-center bg-background p-6 text-center space-y-4">
-        <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-muted border border-border">
-          <Loader2 className="w-8 h-8 text-primary" />
-        </div>
-        <div>
-          <h2 className="text-xl font-bold text-foreground">帳號尚未啟用</h2>
-          <p className="text-muted-foreground mt-2 max-w-sm">
-            您的帳號已經註冊成功，但尚未獲得管理員啟用。請聯繫管理員為您開通權限。
-          </p>
-        </div>
-        <button
-          onClick={signOut}
-          className="px-4 py-2 mt-4 rounded-xl text-sm font-medium border border-border text-foreground hover:bg-accent transition-all"
-        >
-          登出
-        </button>
-      </div>
-    )
-  }
+  // Non-active users are now allowed into the layout but will be handled at the component level (like ChatRoom)
 
   return (
     <div className="min-h-dvh bg-background">

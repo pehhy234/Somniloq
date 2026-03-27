@@ -34,12 +34,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .single()
       
       if (error) {
-        console.error('Error loading profile:', error)
-        setProfileError(error.message)
+        // If it's a "No rows found" error, we handle it as profile=null rather than a failure
+        if (error.code === 'PGRST116') {
+          console.warn('Profile not found for user:', userId)
+          setProfile(null)
+          setProfileError(null)
+        } else {
+          console.error('Error loading profile:', error)
+          setProfileError(error.message)
+          setProfile(null)
+        }
       } else {
         setProfileError(null)
+        setProfile(data)
       }
-      setProfile(data ?? null)
     } catch (err: any) {
       console.error('Profile load exception:', err)
       setProfileError(err.message || 'Unknown error')

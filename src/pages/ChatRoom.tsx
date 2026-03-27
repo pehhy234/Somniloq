@@ -9,6 +9,7 @@ import {
   RotateCcw, PenLine, Copy
 } from 'lucide-react'
 import { useChat, ChatMessage } from '@/hooks/useChat'
+import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/lib/utils'
 import { ModelSwitcher } from '@/components/ModelSwitcher'
 import { ChatContextMenu } from '@/components/ChatContextMenu'
@@ -20,6 +21,7 @@ interface ChatRoomContentProps {
 
 export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRoomContentProps) {
   const navigate = useNavigate()
+  const { isActive } = useAuth()
   const { 
     messages, isMessagesLoading, isTyping, 
     sendMessage, conversations, deleteMessage, updateMessage, regenerateMessage, getSuggestions,
@@ -45,7 +47,7 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
   }, [messages, isTyping])
 
   const handleSend = async () => {
-    if (!input.trim() || isTyping || !currentConv) return
+    if (!input.trim() || isTyping || !currentConv || !isActive) return
     const text = input.trim()
     setInput('')
     setSuggestions([])
@@ -53,19 +55,19 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
   }
 
   const handleContinue = async () => {
-    if (isTyping || !currentConv) return
+    if (isTyping || !currentConv || !isActive) return
     setActiveMenuId(null)
     await sendMessage('', currentConv.character_id, true)
   }
 
   const handleRegenerate = async (msgId: string) => {
-    if (isTyping || !currentConv) return
+    if (isTyping || !currentConv || !isActive) return
     setActiveMenuId(null)
     await regenerateMessage(msgId, currentConv.character_id)
   }
 
   const handleSuggest = async () => {
-    if (!currentConv || isSuggesting) return
+    if (!currentConv || isSuggesting || !isActive) return
     setIsSuggesting(true)
     try {
       const res = await getSuggestions(currentConv.character_id)
@@ -81,7 +83,7 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
   }
 
   const handleEditSave = async () => {
-    if (!editingId) return
+    if (!editingId || !isActive) return
     await updateMessage(editingId, editContent)
     setEditingId(null)
     setActiveMenuId(null)
@@ -92,6 +94,7 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
   }
 
   const handleRollback = async (msgId: string) => {
+    if (!isActive) return
     if (!confirm('確定要回溯至此訊息嗎？\n回溯後，該訊息之後的所有內容將會被刪除且無法恢復。')) return
 
     try {
@@ -434,25 +437,30 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
         {/* 輸入膠囊 */}
         <div className="flex items-end gap-2.5 w-full pointer-events-auto">
           <button 
-            onClick={handleSuggest} disabled={isSuggesting}
+            onClick={handleSuggest} disabled={isSuggesting || !isActive}
             className={cn(
               "w-12 h-12 shrink-0 flex items-center justify-center rounded-[20px] shadow-[0_8px_32px_rgba(0,0,0,0.4)] transition-all duration-300 active:scale-95 border border-white/10 backdrop-blur-3xl",
-              isSuggesting ? "bg-primary/20 animate-pulse" : "bg-black/50 text-yellow-400/80 hover:text-yellow-400 hover:bg-black/60 hover:border-white/20"
+              isSuggesting ? "bg-primary/20 animate-pulse" : "bg-black/50 text-yellow-400/80 hover:text-yellow-400 hover:bg-black/60 hover:border-white/20",
+              !isActive && "opacity-50 grayscale cursor-not-allowed"
             )}
           >
             {isSuggesting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Lightbulb className="w-5.5 h-5.5" />}
           </button>
           
-          <div className="flex-1 flex items-end gap-1.5 glass-pill rounded-full p-1.5 focus-within:bg-black/70 transition-all duration-300">
+          <div className={cn(
+            "flex-1 flex items-end gap-1.5 glass-pill rounded-full p-1.5 focus-within:bg-black/70 transition-all duration-300",
+            !isActive && "bg-white/5 opacity-80 cursor-not-allowed"
+          )}>
             <textarea
               value={input} onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
-              placeholder="Start typing..."
+              placeholder={isActive ? "Start typing..." : "帳號啟用中，功能暫時受限..."}
               className="flex-1 max-h-32 min-h-[44px] bg-transparent text-[15px] text-white/90 px-5 py-3 outline-none resize-none hide-scrollbar placeholder:text-white/20 leading-relaxed font-medium"
               rows={1}
+              disabled={!isActive}
             />
             <button
-              onClick={handleSend} disabled={!input.trim() || isTyping}
+              onClick={handleSend} disabled={!input.trim() || isTyping || !isActive}
               className="w-11 h-11 mb-0.5 shrink-0 flex items-center justify-center rounded-full bg-primary text-white shadow-xl shadow-primary/20 active:scale-95 disabled:opacity-30 hover:brightness-110 transition-all duration-200"
             >
               <Send className="w-4 h-4 ml-0.5" />
