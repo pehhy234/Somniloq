@@ -6,7 +6,7 @@ import {
   Lightbulb, Trash2,
   ChevronDown, ChevronUp,
   Play, X, Menu,
-  RotateCcw, PenLine
+  RotateCcw, PenLine, Copy
 } from 'lucide-react'
 import { useChat, ChatMessage } from '@/hooks/useChat'
 import { cn } from '@/lib/utils'
@@ -92,7 +92,16 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
   }
 
   const handleRollback = async (msgId: string) => {
-    await rollbackMessage(msgId)
+    if (!confirm('確定要回溯至此訊息嗎？\n回溯後，該訊息之後的所有內容將會被刪除且無法恢復。')) return
+
+    try {
+      await rollbackMessage(msgId)
+      setContextMenu(null)
+      setActiveMenuId(null)
+    } catch (err) {
+      console.error('Rollback failed:', err)
+      alert('回溯失敗，請稍後再試')
+    }
   }
 
   const handleRemember = (content: string) => {
@@ -258,9 +267,10 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
         )}
 
         {/* 訊息清單 */}
-        {messages.map((msg) => {
+        {messages.map((msg, index) => {
           const isUser = msg.role === 'user'
           const isEditing = editingId === msg.id
+          const isLast = index === messages.length - 1
           
           return (
             <div 
@@ -276,27 +286,27 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
               <div className={cn("flex items-end gap-2 max-w-[88%]", isUser && "flex-row-reverse")}>
                 <div className={cn("flex flex-col gap-1.5 relative group/bubble", isUser && "items-end")}>
                   {/* 主要訊息氣泡 */}
-                    <div 
-                      onClick={() => toggleMenu(msg.id)}
-                      onContextMenu={(e) => handleContextMenu(e, msg)}
-                      className={cn(
-                        "px-5 py-3.5 rounded-3xl text-[15px] leading-relaxed transition-all duration-300 relative cursor-pointer select-text focus:outline-none",
-                        isUser 
-                          ? "bg-gradient-to-br from-primary to-primary/80 text-white font-medium rounded-br-lg shadow-xl shadow-primary/20" 
-                          : "glass-sm text-white/90 rounded-bl-lg shadow-lg"
-                      )}
-                    >
-                      {isEditing ? (
-                        <div className="flex flex-col gap-3 min-w-[240px]">
-                          <textarea 
-                            className="bg-black/40 border border-white/10 rounded-2xl p-4 text-[14px] text-white focus:outline-none focus:border-primary/50 min-h-[100px] resize-none transition-all duration-150" 
-                            value={editContent} 
-                            onChange={(e) => setEditContent(e.target.value)} 
-                            autoFocus 
-                          />
+                  <div 
+                    onClick={() => toggleMenu(msg.id)}
+                    onContextMenu={(e) => handleContextMenu(e, msg)}
+                    className={cn(
+                      "px-5 py-3.5 rounded-3xl text-[15px] leading-relaxed transition-all duration-300 relative cursor-pointer select-text focus:outline-none",
+                      isUser 
+                        ? "bg-primary/20 border border-primary/25 backdrop-blur-md text-white font-medium rounded-br-lg shadow-lg shadow-primary/5" 
+                        : "glass-sm text-white/90 rounded-bl-lg shadow-lg"
+                    )}
+                  >
+                    {isEditing ? (
+                      <div className="flex flex-col gap-3 min-w-[240px]">
+                        <textarea 
+                          className="bg-black/40 border border-white/10 rounded-2xl p-4 text-[14px] text-white focus:outline-none focus:border-primary/50 min-h-[100px] resize-none" 
+                          value={editContent} 
+                          onChange={(e) => setEditContent(e.target.value)} 
+                          autoFocus 
+                        />
                         <div className="flex justify-end gap-2">
-                          <button onClick={() => setEditingId(null)} className="px-3.5 py-1.5 text-[12px] bg-white/8 border border-white/10 rounded-full font-semibold hover:bg-white/15 transition-colors duration-150">取消</button>
-                          <button onClick={handleEditSave} className="px-3.5 py-1.5 text-[12px] bg-primary text-white rounded-full font-semibold hover:brightness-110 transition-all duration-150">保存</button>
+                          <button onClick={() => setEditingId(null)} className="px-3 py-1.5 text-[11px] text-white/40">取消</button>
+                          <button onClick={() => handleEditSave()} className="px-3.5 py-1.5 text-[11px] bg-primary text-white rounded-full font-bold">儲存</button>
                         </div>
                       </div>
                     ) : (
@@ -304,61 +314,63 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
                     )}
                   </div>
 
-                  {/* 操作工具列 */}
-                  <div className="flex items-center gap-1 mt-0.5">
-                    {isUser ? (
-                       <div className="flex items-center gap-0.5 px-2 py-1 bg-white/[0.06] border border-white/8 rounded-full shadow-sm backdrop-blur-sm">
-                         <button 
-                           onClick={() => { setEditingId(msg.id); setEditContent(msg.content); }} 
-                           className="p-1.5 text-white/30 hover:text-white/90 transition-all duration-150 rounded-lg hover:bg-white/8" 
-                           title="編輯"
-                         >
-                           <PenLine className="w-3.5 h-3.5" strokeWidth={2} />
-                         </button>
-                         <div className="w-px h-3 bg-white/10 mx-0.5" />
-                         <button 
-                           onClick={() => { if(confirm('確定刪除訊息？')) deleteMessage(msg.id); }} 
-                           className="p-1.5 text-white/30 hover:text-red-400/90 transition-all duration-150 rounded-lg hover:bg-red-500/8" 
-                           title="刪除"
-                         >
-                           <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
-                         </button>
-                       </div>
-                    ) : (
-                       <div className="flex items-center gap-0.5 px-2.5 py-1 bg-white/[0.06] border border-white/8 rounded-full shadow-sm backdrop-blur-sm">
-                         <button 
-                           onClick={() => handleRegenerate(msg.id)} 
-                           className="p-1.5 text-white/35 hover:text-white/90 transition-all duration-150 active:scale-90 rounded-lg hover:bg-white/8" 
-                           title="重新生成"
-                         >
-                           <RotateCcw className="w-3.5 h-3.5" strokeWidth={2} />
-                         </button>
-                         <button 
-                           onClick={() => { setEditingId(msg.id); setEditContent(msg.content); }} 
-                           className="p-1.5 text-white/35 hover:text-white/90 transition-all duration-150 active:scale-90 rounded-lg hover:bg-white/8" 
-                           title="編輯"
-                         >
-                           <PenLine className="w-3.5 h-3.5" strokeWidth={2} />
-                         </button>
-                         <div className="w-px h-3 bg-white/10 mx-0.5" />
-                         <button 
-                           onClick={handleContinue} 
-                           className="p-1.5 text-white/35 hover:text-white/90 transition-all duration-150 active:scale-90 rounded-lg hover:bg-white/8" 
-                           title="繼續"
-                         >
-                           <Play className="w-3.5 h-3.5" strokeWidth={2} />
-                         </button>
-                         <div className="w-px h-3 bg-white/10 mx-0.5" />
-                         <button 
-                           onClick={() => { if(confirm('確定刪除訊息？')) deleteMessage(msg.id); }} 
-                           className="p-1.5 text-white/35 hover:text-red-400/80 transition-all duration-150 active:scale-90 rounded-lg hover:bg-red-500/8" 
-                           title="刪除"
-                         >
-                           <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
-                         </button>
-                       </div>
-                    )}
-                  </div>
+                  {/* 氣泡下方工具列 (僅最後一個顯示) */}
+                  {isLast && !isEditing && (
+                    <div className="flex items-center gap-1 mt-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                      {isUser ? (
+                        <div className="flex items-center gap-0.5 px-2 py-1 bg-white/[0.08] border border-white/8 rounded-full shadow-sm backdrop-blur-md">
+                          <button 
+                            onClick={() => { navigator.clipboard.writeText(msg.content); }} 
+                            className="p-1.5 text-white/35 hover:text-white/90 transition-all" 
+                            title="複製"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                          </button>
+                          <div className="w-px h-3 bg-white/10 mx-0.5" />
+                          <button 
+                            onClick={() => { setEditingId(msg.id); setEditContent(msg.content); }} 
+                            className="p-1.5 text-white/35 hover:text-white/90 transition-all" 
+                            title="編輯"
+                          >
+                            <PenLine className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-0.5 px-2.5 py-1 bg-white/[0.08] border border-white/8 rounded-full shadow-sm backdrop-blur-md">
+                          <button 
+                            onClick={() => { navigator.clipboard.writeText(msg.content); }} 
+                            className="p-1.5 text-white/35 hover:text-white/90 transition-all" 
+                            title="複製"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                          </button>
+                          <div className="w-px h-3 bg-white/10 mx-0.5" />
+                          <button 
+                            onClick={() => handleRegenerate(msg.id)} 
+                            className="p-1.5 text-white/35 hover:text-white/90 transition-all active:scale-90" 
+                            title="重新生成"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                          </button>
+                          <button 
+                            onClick={() => { setEditingId(msg.id); setEditContent(msg.content); }} 
+                            className="p-1.5 text-white/35 hover:text-white/90 transition-all active:scale-90" 
+                            title="編輯"
+                          >
+                            <PenLine className="w-3.5 h-3.5" />
+                          </button>
+                          <div className="w-px h-3 bg-white/10 mx-0.5" />
+                          <button 
+                            onClick={handleContinue} 
+                            className="p-1.5 text-white/35 hover:text-white/90 transition-all active:scale-90" 
+                            title="繼續"
+                          >
+                            <Play className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
