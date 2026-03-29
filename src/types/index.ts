@@ -110,6 +110,48 @@ export interface Database {
           content?: string
         }
       }
+      models: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          provider: string
+          model_id: string
+          category: string
+          is_active: boolean
+          api_key_name: string | null
+          base_url: string | null
+          icon_url: string | null
+          tags: string[] | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          provider: string
+          model_id: string
+          category?: string
+          is_active?: boolean
+          api_key_name?: string | null
+          base_url?: string | null
+          icon_url?: string | null
+          tags?: string[] | null
+          created_at?: string
+        }
+        Update: {
+          name?: string
+          description?: string | null
+          provider?: string
+          model_id?: string
+          category?: string
+          is_active?: boolean
+          api_key_name?: string | null
+          base_url?: string | null
+          icon_url?: string | null
+          tags?: string[] | null
+        }
+      }
     }
     Views: Record<string, never>
     Functions: Record<string, never>
@@ -122,6 +164,7 @@ export type Profile = Database['public']['Tables']['profiles']['Row']
 export type Character = Database['public']['Tables']['characters']['Row']
 export type Conversation = Database['public']['Tables']['conversations']['Row']
 export type Message = Database['public']['Tables']['messages']['Row']
+export type Model = Database['public']['Tables']['models']['Row']
 
 // Extended types for joined queries
 export type ConversationWithCharacter = Conversation & {

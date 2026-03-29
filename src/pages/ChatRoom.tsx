@@ -83,8 +83,27 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
   }
 
   const handleEditSave = async () => {
-    if (!editingId || !isActive) return
+    if (!editingId || !isActive || !currentConv) return
+    
+    // 找出目前編輯的訊息
+    const msgToEdit = messages.find(m => m.id === editingId)
+    const isUser = msgToEdit?.role === 'user'
+
     await updateMessage(editingId, editContent)
+    
+    // 如果是使用者訊息，存檔後自動觸發重新生成
+    if (isUser) {
+      const msgIndex = messages.findIndex(m => m.id === editingId)
+      // 如果這則訊息後面有接續的訊息，執行回溯式重新生成
+      if (msgIndex !== -1 && msgIndex < messages.length - 1) {
+        const nextMsgId = messages[msgIndex + 1].id
+        await handleRegenerate(nextMsgId)
+      } else {
+        // 如果是最後一則訊息，直接點擊繼續的概念發送空內容觸發 AI
+        await sendMessage('', currentConv.character_id, true)
+      }
+    }
+
     setEditingId(null)
     setActiveMenuId(null)
   }
@@ -333,7 +352,7 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
                           <button 
                             onClick={() => { setEditingId(msg.id); setEditContent(msg.content); }} 
                             className="p-1.5 text-white/35 hover:text-white/90 transition-all" 
-                            title="編輯"
+                            title="改寫"
                           >
                             <PenLine className="w-3.5 h-3.5" />
                           </button>
@@ -358,7 +377,7 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
                           <button 
                             onClick={() => { setEditingId(msg.id); setEditContent(msg.content); }} 
                             className="p-1.5 text-white/35 hover:text-white/90 transition-all active:scale-90" 
-                            title="編輯"
+                            title="改寫"
                           >
                             <PenLine className="w-3.5 h-3.5" />
                           </button>
@@ -403,13 +422,10 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
           onRollback={() => handleRollback(contextMenu.msg.id)}
           onRemember={() => handleRemember(contextMenu.msg.content)}
           onRewrite={() => {
-            if (contextMenu.msg.role === 'assistant') {
-              handleRegenerate(contextMenu.msg.id)
-            } else {
-              setEditingId(contextMenu.msg.id); 
-              setEditContent(contextMenu.msg.content);
-            }
+            setEditingId(contextMenu.msg.id); 
+            setEditContent(contextMenu.msg.content);
           }}
+          onRegenerate={contextMenu.msg.role === 'assistant' ? () => handleRegenerate(contextMenu.msg.id) : undefined}
         />
       )}
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react'
-import { Copy, Trash2, RotateCcw, Bookmark, PenLine, History, Brain } from 'lucide-react'
+import { Copy, Trash2, RotateCcw, PenLine, History, Brain } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface ChatContextMenuProps {
@@ -11,6 +11,7 @@ interface ChatContextMenuProps {
   onRollback: () => void
   onRemember: () => void
   onRewrite: () => void
+  onRegenerate?: () => void
 }
 
 export function ChatContextMenu({
@@ -22,6 +23,7 @@ export function ChatContextMenu({
   onRollback,
   onRemember,
   onRewrite,
+  onRegenerate,
 }: ChatContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -91,6 +93,13 @@ export function ChatContextMenu({
           label="改寫" 
           onClick={() => { onRewrite(); onClose(); }} 
         />
+        {onRegenerate && (
+          <MenuItem 
+            icon={<RotateCcw className="w-[18px] h-[18px]" />} 
+            label="重新生成" 
+            onClick={() => { onRegenerate(); onClose(); }} 
+          />
+        )}
         <MenuItem 
           icon={<History className="w-[18px] h-[18px]" />} 
           label="回溯" 

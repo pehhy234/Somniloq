@@ -3,24 +3,11 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { 
   Shield, CheckCircle, XCircle, Loader2, Users, 
-  Database, Plus, Trash2, Edit, Save, X 
+  Database, Plus, Trash2, Edit, Save, X, ChevronDown
 } from 'lucide-react'
-import type { Profile } from '@/types'
+import type { Profile, Model } from '@/types'
 import { cn } from '@/lib/utils'
 
-interface Model {
-  id: string
-  name: string
-  description: string
-  provider: string
-  model_id: string
-  category: string
-  is_active: boolean
-  api_key_name: string
-  base_url: string
-  icon_url: string
-  tags: string[]
-}
 
 export default function AdminPage() {
   const { isAdmin } = useAuth()
@@ -28,11 +15,21 @@ export default function AdminPage() {
   
   // User Management State
   const [profiles, setProfiles] = useState<Profile[]>([])
+  const [userFilter, setUserFilter] = useState<'all' | 'active' | 'inactive'>('all')
   
   // Model Management State
   const [models, setModels] = useState<Model[]>([])
+  const [modelSearch, setModelSearch] = useState('')
+  const [providerFilter, setProviderFilter] = useState('all')
+  const [categoryFilter, setCategoryFilter] = useState('all')
+  
+  const [showProviderFilterDropdown, setShowProviderFilterDropdown] = useState(false)
+  const [showCategoryFilterDropdown, setShowCategoryFilterDropdown] = useState(false)
+  
   const [isEditingModel, setIsEditingModel] = useState<string | null>(null)
   const [editForm, setEditForm] = useState<Partial<Model>>({})
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
+  const [showProviderDropdown, setShowProviderDropdown] = useState(false)
   
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -127,12 +124,36 @@ export default function AdminPage() {
 
   const saveModel = async () => {
     try {
+      // Formatter function: Capitalize first letter (Title Case)
+      const toTitleCase = (str: string) => {
+        if (!str) return ''
+        return str.trim().split(' ').map(word => 
+          word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        ).join(' ')
+      }
+
       // Clean up tags
       const tagsArray = typeof editForm.tags === 'string' 
         ? (editForm.tags as string).split(',').map(t => t.trim()).filter(Boolean)
         : editForm.tags;
 
-      const payload = { ...editForm, tags: tagsArray };
+      // Format name and category
+      const formattedName = toTitleCase(editForm.name || '');
+      const formattedCategory = toTitleCase(editForm.category || '');
+
+      // Handle api_key_name: convert to uppercase and append _API_KEY if missing
+      let apiKeyName = (editForm.api_key_name || '').toUpperCase().trim();
+      if (apiKeyName && !apiKeyName.endsWith('_API_KEY')) {
+        apiKeyName = `${apiKeyName}_API_KEY`;
+      }
+
+      const payload = { 
+        ...editForm, 
+        name: formattedName,
+        category: formattedCategory,
+        tags: tagsArray, 
+        api_key_name: apiKeyName 
+      };
 
       if (isEditingModel === 'new') {
         const { data, error } = await supabase
@@ -214,14 +235,45 @@ export default function AdminPage() {
           </div>
         ) : activeTab === 'users' ? (
           <div className="space-y-6">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              使用者審核
-              {profiles.filter(p => !p.is_active).length > 0 && (
-                <span className="bg-destructive text-destructive-foreground text-xs px-2 py-0.5 rounded-full">
-                  {profiles.filter(p => !p.is_active).length} 待審核
-                </span>
-              )}
-            </h2>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                使用者審核
+                {profiles.filter(p => !p.is_active).length > 0 && (
+                  <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-bold shadow-lg shadow-red-500/20">
+                    {profiles.filter(p => !p.is_active).length} 待審核
+                  </span>
+                )}
+              </h2>
+
+              <div className="flex bg-white/5 p-1 rounded-xl border border-white/5 self-start sm:self-auto">
+                {[
+                  { id: 'all', label: '全部', icon: Users },
+                  { id: 'active', label: '已啟用', icon: CheckCircle },
+                  { id: 'inactive', label: '未啟用', icon: XCircle }
+                ].map((f) => (
+                  <button
+                    key={f.id}
+                    onClick={() => setUserFilter(f.id as any)}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
+                      userFilter === f.id 
+                        ? "bg-white/10 text-white shadow-sm border border-white/10" 
+                        : "text-white/40 hover:text-white/60 hover:bg-white/[0.02]"
+                    )}
+                  >
+                    <f.icon className="w-3.5 h-3.5" />
+                    {f.label}
+                    <span className="opacity-40 ml-0.5">
+                      ({profiles.filter(p => {
+                        if (f.id === 'active') return p.is_active
+                        if (f.id === 'inactive') return !p.is_active
+                        return true
+                      }).length})
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
             
             <div className="glass-md rounded-3xl overflow-hidden shadow-2xl">
               <div className="overflow-x-auto">
@@ -235,7 +287,13 @@ export default function AdminPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/50">
-                    {profiles.map(profile => (
+                    {profiles
+                      .filter(p => {
+                        if (userFilter === 'active') return p.is_active
+                        if (userFilter === 'inactive') return !p.is_active
+                        return true
+                      })
+                      .map(profile => (
                       <tr key={profile.id} className="hover:bg-muted/30 transition-colors">
                         <td className="p-5">
                           <div className="flex items-center gap-4">
@@ -290,29 +348,124 @@ export default function AdminPage() {
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">AI 模型列表</h2>
-              <button
-                onClick={() => {
-                  setEditForm({ 
-                    name: '', 
-                    provider: 'google', 
-                    model_id: '', 
-                    category: 'All', 
-                    is_active: true,
-                    api_key_name: 'GEMINI_API_KEY',
-                    base_url: '',
-                    icon_url: '',
-                    tags: [],
-                    description: ''
-                  })
-                  setIsEditingModel('new')
-                }}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-primary text-white font-bold text-sm hover:brightness-110 transition-all shadow-xl shadow-primary/20"
-              >
-                <Plus className="w-4 h-4" />
-                Add Model
-              </button>
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <h2 className="text-lg font-semibold whitespace-nowrap">AI 模型列表</h2>
+                <button
+                  onClick={() => {
+                    setEditForm({ 
+                      name: '', 
+                      provider: 'google', 
+                      model_id: '', 
+                      category: '', 
+                      is_active: true,
+                      api_key_name: '',
+                      base_url: '',
+                      icon_url: '',
+                      tags: [],
+                      description: ''
+                    })
+                    setIsEditingModel('new')
+                  }}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-primary text-white font-bold text-sm hover:brightness-110 transition-all shadow-xl shadow-primary/20"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Model
+                </button>
+              </div>
+
+              {/* Advanced Filter Row */}
+              <div className="flex flex-wrap items-center gap-3 p-4 rounded-3xl bg-white/[0.02] border border-white/5 relative">
+                {/* Search */}
+                <div className="flex-1 min-w-[200px] relative">
+                  <input 
+                    type="text"
+                    placeholder="搜尋模型名稱或 ID..."
+                    value={modelSearch}
+                    onChange={(e) => setModelSearch(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-primary/50 transition-all placeholder:text-white/10"
+                  />
+                  {modelSearch && (
+                    <button onClick={() => setModelSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/20 hover:text-white transition-colors">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Provider Filter */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-white/30 uppercase tracking-wider whitespace-nowrap">供應商:</span>
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowProviderFilterDropdown(!showProviderFilterDropdown)}
+                      onBlur={() => setTimeout(() => setShowProviderFilterDropdown(false), 200)}
+                      className="min-w-[120px] bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white flex items-center justify-between hover:border-white/20 transition-all"
+                    >
+                      <span className="capitalize">{providerFilter === 'all' ? '全部' : providerFilter}</span>
+                      <ChevronDown className={cn("w-3.5 h-3.5 text-white/20 transition-transform ml-2", showProviderFilterDropdown && "rotate-180")} />
+                    </button>
+                    
+                    {showProviderFilterDropdown && (
+                      <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-[#111318] border border-white/10 rounded-2xl shadow-2xl py-2 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                        <button
+                          className="w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition-colors flex items-center justify-between"
+                          onClick={() => { setProviderFilter('all'); setShowProviderFilterDropdown(false); }}
+                        >
+                          <span>全部</span>
+                          {providerFilter === 'all' && <CheckCircle className="w-3.5 h-3.5 text-primary" />}
+                        </button>
+                        {Array.from(new Set(models.map(m => m.provider))).sort().map(p => (
+                          <button
+                            key={p}
+                            className="w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition-colors flex items-center justify-between"
+                            onClick={() => { setProviderFilter(p); setShowProviderFilterDropdown(false); }}
+                          >
+                            <span className="capitalize">{p}</span>
+                            {providerFilter === p && <CheckCircle className="w-3.5 h-3.5 text-primary" />}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Category Filter */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-white/30 uppercase tracking-wider whitespace-nowrap">分類:</span>
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowCategoryFilterDropdown(!showCategoryFilterDropdown)}
+                      onBlur={() => setTimeout(() => setShowCategoryFilterDropdown(false), 200)}
+                      className="min-w-[120px] bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white flex items-center justify-between hover:border-white/20 transition-all"
+                    >
+                      <span>{categoryFilter === 'all' ? '全部' : categoryFilter}</span>
+                      <ChevronDown className={cn("w-3.5 h-3.5 text-white/20 transition-transform ml-2", showCategoryFilterDropdown && "rotate-180")} />
+                    </button>
+                    
+                    {showCategoryFilterDropdown && (
+                      <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-[#111318] border border-white/10 rounded-2xl shadow-2xl py-2 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                        <button
+                          className="w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition-colors flex items-center justify-between"
+                          onClick={() => { setCategoryFilter('all'); setShowCategoryFilterDropdown(false); }}
+                        >
+                          <span>全部</span>
+                          {categoryFilter === 'all' && <CheckCircle className="w-3.5 h-3.5 text-primary" />}
+                        </button>
+                        {Array.from(new Set(models.map(m => m.category))).sort().map(c => (
+                          <button
+                            key={c}
+                            className="w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition-colors flex items-center justify-between"
+                            onClick={() => { setCategoryFilter(c); setShowCategoryFilterDropdown(false); }}
+                          >
+                            <span>{c}</span>
+                            {categoryFilter === c && <CheckCircle className="w-3.5 h-3.5 text-primary" />}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="glass-md rounded-3xl overflow-hidden shadow-2xl">
@@ -320,15 +473,29 @@ export default function AdminPage() {
                 <table className="w-full text-left border-collapse min-w-[800px]">
                   <thead>
                     <tr className="border-b border-white/5 bg-white/[0.02]">
-                      <th className="p-5 text-tiny font-bold text-white/30 uppercase tracking-widest">Provider / Name</th>
-                      <th className="p-5 text-tiny font-bold text-white/30 uppercase tracking-widest">Model ID</th>
-                      <th className="p-5 text-tiny font-bold text-white/30 uppercase tracking-widest">Categories</th>
-                      <th className="p-5 text-center text-tiny font-bold text-white/30 uppercase tracking-widest">Status</th>
-                      <th className="p-5 text-right text-tiny font-bold text-white/30 uppercase tracking-widest">Options</th>
+                      <th className="p-5 text-xs font-bold text-white/30 uppercase tracking-widest">Provider / Name</th>
+                      <th className="p-5 text-xs font-bold text-white/30 uppercase tracking-widest">Model ID</th>
+                      <th className="p-5 text-xs font-bold text-white/30 uppercase tracking-widest">Categories</th>
+                      <th className="p-5 text-center text-xs font-bold text-white/30 uppercase tracking-widest">Status</th>
+                      <th className="p-5 text-right text-xs font-bold text-white/30 uppercase tracking-widest">Options</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/50">
-                    {models.map(m => (
+                    {models
+                      .filter(m => {
+                        // Provider Filter
+                        const matchProvider = providerFilter === 'all' || m.provider === providerFilter;
+                        // Category Filter
+                        const matchCategory = categoryFilter === 'all' || m.category === categoryFilter;
+                        // Search Filter (Name or ID)
+                        const searchLower = modelSearch.toLowerCase();
+                        const matchSearch = !modelSearch || 
+                          m.name.toLowerCase().includes(searchLower) || 
+                          m.model_id.toLowerCase().includes(searchLower);
+                        
+                        return matchProvider && matchCategory && matchSearch;
+                      })
+                      .map(m => (
                       <tr key={m.id} className="hover:bg-muted/30 transition-colors">
                         <td className="p-4">
                           <div className="flex items-center gap-3">
@@ -432,18 +599,47 @@ export default function AdminPage() {
                     placeholder="例如: Gemini 1.5 Pro"
                   />
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 relative">
                   <label className="text-xs font-bold text-muted-foreground ml-1">供應商</label>
-                  <select
-                    className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-sm"
-                    value={editForm.provider || 'google'}
-                    onChange={e => setEditForm(prev => ({ ...prev, provider: e.target.value }))}
-                  >
-                    <option value="google">Google (Official)</option>
-                    <option value="openai">OpenAI (Official)</option>
-                    <option value="openrouter">OpenRouter</option>
-                    <option value="anthropic">Anthropic</option>
-                  </select>
+                  <div className="relative group">
+                    <button
+                      type="button"
+                      onClick={() => setShowProviderDropdown(!showProviderDropdown)}
+                      onBlur={() => {
+                        setTimeout(() => setShowProviderDropdown(false), 200)
+                      }}
+                      className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-sm flex items-center justify-between hover:border-white/20 transition-all text-left"
+                    >
+                      <span className="capitalize">{editForm.provider || 'google'}</span>
+                      <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform", showProviderDropdown && "rotate-180")} />
+                    </button>
+                    
+                    {showProviderDropdown && (
+                      <div className="absolute top-full left-0 right-0 mt-2 z-[999] bg-[#111318] border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] py-2 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                        {[
+                          { value: 'google', label: 'Google (Official)' },
+                          { value: 'openai', label: 'OpenAI (Official)' },
+                          { value: 'openrouter', label: 'OpenRouter' },
+                          { value: 'anthropic', label: 'Anthropic' },
+                          { value: 'nvidia', label: 'NVIDIA' },
+                          { value: 'other', label: 'Other' }
+                        ].map((opt) => (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            className="w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition-colors flex items-center justify-between"
+                            onClick={() => {
+                              setEditForm(prev => ({ ...prev, provider: opt.value }))
+                              setShowProviderDropdown(false)
+                            }}
+                          >
+                            <span>{opt.label}</span>
+                            {editForm.provider === opt.value && <CheckCircle className="w-3.5 h-3.5 text-primary" />}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -463,8 +659,8 @@ export default function AdminPage() {
                   <input
                     className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-sm font-mono"
                     value={editForm.api_key_name || ''}
-                    onChange={e => setEditForm(prev => ({ ...prev, api_key_name: e.target.value }))}
-                    placeholder="例如: GEMINI_API_KEY"
+                    onChange={e => setEditForm(prev => ({ ...prev, api_key_name: e.target.value.toUpperCase() }))}
+                    placeholder="例如: GEMINI"
                   />
                 </div>
               </div>
@@ -482,14 +678,61 @@ export default function AdminPage() {
 
               {/* Row 4: Category & Icon */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 relative">
                   <label className="text-xs font-bold text-muted-foreground ml-1">大分類 (如: Gemini, GPT)</label>
-                  <input
-                    className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-sm"
-                    value={editForm.category || ''}
-                    onChange={e => setEditForm(prev => ({ ...prev, category: e.target.value }))}
-                    placeholder="例如: Gemini"
-                  />
+                  <div className="relative group">
+                    <input
+                      autoComplete="off"
+                      className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-sm pr-10 focus:ring-2 focus:ring-primary/20 transition-all"
+                      value={editForm.category || ''}
+                      onChange={e => setEditForm(prev => ({ ...prev, category: e.target.value }))}
+                      onFocus={() => setShowCategoryDropdown(true)}
+                      onBlur={() => {
+                        // Delay hide to allow clicks on options
+                        setTimeout(() => setShowCategoryDropdown(false), 200)
+                      }}
+                      placeholder="例如: Gemini"
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white transition-colors"
+                    >
+                      <ChevronDown className={cn("w-4 h-4 transition-transform", showCategoryDropdown && "rotate-180")} />
+                    </button>
+
+                    {showCategoryDropdown && (
+                      <div className="absolute top-full left-0 right-0 mt-2 z-[999] bg-[#111318] border border-primary/30 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] py-2 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                        <div className="max-h-[200px] overflow-y-auto custom-scrollbar">
+                          {Array.from(new Set(models.map(m => m.category)))
+                            .filter(cat => cat && cat.toLowerCase().includes((editForm.category || '').toLowerCase()))
+                            .length > 0 ? (
+                              Array.from(new Set(models.map(m => m.category)))
+                                .filter(cat => cat && cat.toLowerCase().includes((editForm.category || '').toLowerCase()))
+                                .map(cat => (
+                                  <button
+                                    key={cat}
+                                    type="button"
+                                    className="w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition-colors flex items-center justify-between"
+                                    onClick={() => {
+                                      setEditForm(prev => ({ ...prev, category: cat }))
+                                      setShowCategoryDropdown(false)
+                                    }}
+                                  >
+                                    <span>{cat}</span>
+                                    {editForm.category === cat && <CheckCircle className="w-3.5 h-3.5 text-primary" />}
+                                  </button>
+                                ))
+                            ) : (
+                              <div className="px-4 py-2 text-xs text-muted-foreground italic flex items-center gap-2">
+                                <Plus className="w-3 h-3" />
+                                新增此分類: "{editForm.category}"
+                              </div>
+                            )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-muted-foreground ml-1">圖示 URL (可不填)</label>
