@@ -16,14 +16,35 @@ interface Model {
   icon_url?: string
 }
 
-const CATEGORIES = ['All', 'Free', 'DeepSeek', 'Gemini', 'Gpt', 'Claude']
-
-export function ModelSwitcher({ minimalist = false }: { minimalist?: boolean }) {
-  const { model: selectedModelId, setModel, contextCompression, setContextCompression } = useUIStore()
+export function ModelSwitcher({ 
+  minimalist = false, 
+  conversationId, 
+  modelId, 
+  onSelect 
+}: { 
+  minimalist?: boolean, 
+  conversationId?: string, 
+  modelId?: string,
+  onSelect?: (id: string) => void
+}) {
+  const { 
+    model: globalModelId, 
+    conversationModels, 
+    setModel, 
+    setConversationModel, 
+    contextCompression, 
+    setContextCompression 
+  } = useUIStore()
+  
+  const selectedModelId = modelId || (conversationId && conversationModels[conversationId]) || globalModelId
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState('All')
   const [tempSelectedId, setTempSelectedId] = useState(selectedModelId)
+
+  useEffect(() => {
+    setTempSelectedId(selectedModelId)
+  }, [selectedModelId])
 
   // Fetch models from Supabase
   const { data: models = [], isLoading } = useQuery({
@@ -37,6 +58,19 @@ export function ModelSwitcher({ minimalist = false }: { minimalist?: boolean }) 
       return data as Model[]
     }
   })
+
+  // Dynamically generate categories based on existing models
+  const categories = useMemo(() => {
+    const cats = new Set(['All'])
+    models.forEach(m => {
+      if (m.category) cats.add(m.category)
+      // Optional: Add specific tags that we want to filter by, or all tags
+      if (m.tags && Array.isArray(m.tags)) {
+        m.tags.forEach(tag => cats.add(tag))
+      }
+    })
+    return Array.from(cats)
+  }, [models])
 
   // Filter models based on search and category
   const filteredModels = useMemo(() => {
@@ -96,7 +130,7 @@ export function ModelSwitcher({ minimalist = false }: { minimalist?: boolean }) 
             )}
           >
             {/* Header */}
-            <div className="relative px-6 pt-6 pb-2">
+            <div className="relative px-6 pt-6 pb-0">
               <div className="flex items-center justify-between mb-4">
                 <button onClick={() => setOpen(false)} className="p-2 -ml-2 text-muted-foreground hover:text-foreground transition-colors">
                   <X className="w-6 h-6" />
@@ -117,8 +151,8 @@ export function ModelSwitcher({ minimalist = false }: { minimalist?: boolean }) 
               </div>
 
               {/* Category Tabs */}
-              <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar scroll-smooth">
-                {CATEGORIES.map(cat => (
+              <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar scroll-smooth">
+                {categories.map(cat => (
                   <button
                     key={cat}
                     onClick={() => setActiveCategory(cat)}
@@ -136,31 +170,31 @@ export function ModelSwitcher({ minimalist = false }: { minimalist?: boolean }) 
             </div>
 
             {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6 no-scrollbar">
+            <div className="flex-1 overflow-y-auto px-6 pt-1 pb-4 space-y-4 no-scrollbar">
               
               {/* Settings Section (Context Compression only) */}
-              <div className="p-5 rounded-[24px] bg-muted/30 border border-border/50 space-y-4 shadow-inner">
+              <div className="px-4 py-3 rounded-[20px] bg-muted/20 border border-border/40 space-y-2 shadow-inner">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="text-[15px] font-bold tracking-tight">自動上下文壓縮</span>
-                    <span className="px-1.5 py-0.5 rounded-md bg-primary/20 text-primary text-[9px] font-black uppercase tracking-wider">Beta</span>
-                    <HelpCircle className="w-3.5 h-3.5 text-muted-foreground/40 hover:text-muted-foreground cursor-help transition-colors" />
+                    <span className="text-[14px] font-bold tracking-tight">自動上下文壓縮</span>
+                    <span className="px-1.5 py-0.5 rounded-md bg-primary/20 text-primary text-[8px] font-black uppercase tracking-wider">Beta</span>
+                    <HelpCircle className="w-3 h-3 text-muted-foreground/40 hover:text-muted-foreground cursor-help transition-colors" />
                   </div>
                   <button 
                     onClick={() => setContextCompression(!contextCompression)}
                     className={cn(
-                      "w-11 h-6 rounded-full relative transition-all duration-300 ring-offset-background focus:ring-2 focus:ring-primary/20",
+                      "w-9 h-5 rounded-full relative transition-all duration-300 ring-offset-background focus:ring-2 focus:ring-primary/20",
                       contextCompression ? "bg-primary" : "bg-muted-foreground/20"
                     )}
                   >
                     <div className={cn(
-                      "absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow-lg transition-transform duration-300 cubic-bezier(0.175, 0.885, 0.32, 1.275)",
-                      contextCompression ? "translate-x-5" : "translate-x-0"
+                      "absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-lg transition-transform duration-300 cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+                      contextCompression ? "translate-x-4" : "translate-x-0"
                     )} />
                   </button>
                 </div>
-                <p className="text-[11px] text-muted-foreground/80 leading-relaxed font-medium">
-                  開啟後，系統將智能判斷對話上下文使用情況，在合適的時機自動壓縮歷史記錄，幫助 AI 專注於當前的核心對話。
+                <p className="text-[10px] text-muted-foreground/70 leading-relaxed font-medium">
+                  開啟後，將自動壓縮歷史記錄，幫助 AI 專注於當前的核心對話。
                 </p>
               </div>
 
@@ -236,8 +270,14 @@ export function ModelSwitcher({ minimalist = false }: { minimalist?: boolean }) 
                   </div>
                   <button 
                     onClick={() => {
-                       setModel(tempSelectedId)
-                       setOpen(false)
+                        if (onSelect) {
+                          onSelect(tempSelectedId)
+                        } else if (conversationId) {
+                          setConversationModel(conversationId, tempSelectedId)
+                        } else {
+                          setModel(tempSelectedId)
+                        }
+                        setOpen(false)
                     }}
                     className="flex-1 max-w-[140px] py-3.5 rounded-2xl bg-primary text-primary-foreground text-sm font-black transition-all active:scale-95 shadow-lg shadow-primary/20 hover:brightness-110"
                   >

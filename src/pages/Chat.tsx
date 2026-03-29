@@ -6,6 +6,7 @@ import { useCharacters } from '@/hooks/useCharacters'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 import { ChatRoomContent } from '@/pages/ChatRoom'
+import { useModalStore } from '@/stores/modalStore'
 
 type TabType = 'chat' | 'character'
 
@@ -45,12 +46,18 @@ export default function ChatPage() {
     document.addEventListener('touchmove', handleTouchMove as any, { once: true })
   }
 
+  const modal = useModalStore()
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation()
-    if (confirm('確定要刪除此對話嗎？')) {
-      await deleteConversation(id)
-      setSwipedId(null)
-    }
+    modal.confirm('確定要刪除此對話嗎？', {
+      title: '刪除確認',
+      confirmText: '確定刪除',
+      destructive: true,
+      onConfirm: async () => {
+        await deleteConversation(id)
+        setSwipedId(null)
+      }
+    })
   }
 
   return (

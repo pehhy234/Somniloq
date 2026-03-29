@@ -3,13 +3,28 @@ import { MessageSquare, Compass, PlusCircle, User, Sparkles, Shield } from 'luci
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 
-const getNavItems = (isAdmin: boolean) => [
-  { to: '/chat', icon: MessageSquare, label: '對話', end: false, protected: true },
-  { to: '/', icon: Compass, label: '大廳', end: true, protected: false },
-  { to: '/create', icon: PlusCircle, label: '創造', end: false, protected: true },
-  { to: '/profile', icon: User, label: '我的', end: false, protected: true },
-  ...(isAdmin ? [{ to: '/admin', icon: Shield, label: '管理', end: false, protected: true }] : [])
-]
+const getNavItems = (isAdmin: boolean, isDesktop = false) => {
+  const items = [
+    { to: '/chat', icon: MessageSquare, label: '對話', end: false, protected: true },
+    { to: '/', icon: Compass, label: '大廳', end: true, protected: false },
+    { to: '/create', icon: PlusCircle, label: '創造', end: false, protected: true },
+    { to: '/profile', icon: User, label: '我的', end: false, protected: true },
+  ]
+
+  let sortedItems = [...items]
+  
+  if (isDesktop) {
+    // Desktop order: 大廳 (Compass), 創造 (PlusCircle), 對話 (MessageSquare), 我的 (User)
+    const desktopOrder = ['大廳', '創造', '對話', '我的']
+    sortedItems = desktopOrder.map(label => items.find(i => i.label === label)!)
+  }
+
+  if (isAdmin) {
+    sortedItems.push({ to: '/admin', icon: Shield, label: '管理', end: false, protected: true })
+  }
+
+  return sortedItems
+}
 
 // ── Mobile bottom tab bar ──────────────────────────────────────
 export function MobileNav() {
@@ -63,7 +78,7 @@ export function MobileNav() {
 export function DesktopNav() {
   const { isAuthenticated, isLoading, isAdmin } = useAuth()
   const location = useLocation()
-  const navItems = getNavItems(isAdmin)
+  const navItems = getNavItems(isAdmin, true)
 
   if (location.pathname.startsWith('/room')) return null
 

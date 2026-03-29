@@ -4,15 +4,18 @@ import { createPortal } from 'react-dom'
 import { 
   ArrowLeft, Send, Loader2, 
   Lightbulb, Trash2,
-  ChevronDown, ChevronUp,
-  Play, X, Menu,
+  ChevronDown, ChevronUp, ChevronRight,
+  Play, X, Menu, Quote,
   RotateCcw, PenLine, Copy
 } from 'lucide-react'
 import { useChat, ChatMessage } from '@/hooks/useChat'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/lib/utils'
+import { supabase } from '@/lib/supabase'
 import { ModelSwitcher } from '@/components/ModelSwitcher'
 import { ChatContextMenu } from '@/components/ChatContextMenu'
+import { useModalStore } from '@/stores/modalStore'
+import { Upload } from 'lucide-react'
 
 interface ChatRoomContentProps {
   conversationId: string
@@ -21,18 +24,24 @@ interface ChatRoomContentProps {
 
 export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRoomContentProps) {
   const navigate = useNavigate()
-  const { isActive } = useAuth()
+  const modal = useModalStore()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isUploadingBg, setIsUploadingBg] = useState(false)
+  const [showBgGallery, setShowBgGallery] = useState(false)
+  const [bgHistory, setBgHistory] = useState<string[]>([])
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false)
+  const { user, isActive } = useAuth()
   const { 
     messages, isMessagesLoading, isTyping, 
     sendMessage, conversations, deleteMessage, updateMessage, regenerateMessage, getSuggestions,
-    rollbackMessage
+    rollbackMessage, updateConversationModel, updateConversationBg
   } = useChat(conversationId)
   
   const currentConv = conversations.find(c => c.id === conversationId)
   const [input, setInput] = useState('')
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [isSuggesting, setIsSuggesting] = useState(false)
-  const [showInfo, setShowInfo] = useState(false)
+  const [infoMode, setInfoMode] = useState<'full' | 'simple' | null>(null)
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editContent, setEditContent] = useState('')
@@ -114,22 +123,55 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
 
   const handleRollback = async (msgId: string) => {
     if (!isActive) return
-    if (!confirm('確定要回溯至此訊息嗎？\n回溯後，該訊息之後的所有內容將會被刪除且無法恢復。')) return
-
-    try {
-      await rollbackMessage(msgId)
-      setContextMenu(null)
-      setActiveMenuId(null)
-    } catch (err) {
-      console.error('Rollback failed:', err)
-      alert('回溯失敗，請稍後再試')
-    }
+    modal.confirm('確定要回溯至此訊息嗎？\n回溯後，該訊息之後的所有內容將會被刪除且無法恢復。', {
+      title: '操作確認',
+      confirmText: '確定回溯',
+      destructive: true,
+      onConfirm: async () => {
+        try {
+          await rollbackMessage(msgId)
+          setContextMenu(null)
+          setActiveMenuId(null)
+        } catch (err) {
+          console.error('Rollback failed:', err)
+          modal.alert('回溯失敗，請稍後再試', { title: '系統錯誤' })
+        }
+      }
+    })
   }
 
   const handleRemember = (content: string) => {
     // Memory functionality mock
     console.log('Remembering:', content)
-    alert('AI 已記住此對話重點')
+    modal.alert('AI 已記住此對話重點', { title: '記憶成功' })
+  }
+
+  const fetchBgHistory = async () => {
+    if (!user) return
+    setIsLoadingHistory(true)
+    try {
+      const { data, error } = await supabase.storage
+        .from('backgrounds')
+        .list(`${user.id}/`, {
+          limit: 50,
+          offset: 0,
+          sortBy: { column: 'created_at', order: 'desc' }
+        })
+
+      if (error) throw error
+      
+      const urls = (data || []).map(file => {
+        const { data: { publicUrl } } = supabase.storage
+          .from('backgrounds')
+          .getPublicUrl(`${user.id}/${file.name}`)
+        return publicUrl
+      })
+      setBgHistory(urls)
+    } catch (err) {
+      console.error('Fetch history error:', err)
+    } finally {
+      setIsLoadingHistory(false)
+    }
   }
 
   const handleContextMenu = (e: React.MouseEvent | React.TouchEvent, msg: ChatMessage) => {
@@ -165,21 +207,30 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
         className="absolute left-[2px] right-[2px] z-50 flex items-center justify-between pointer-events-none"
         style={{ top: 'calc(env(safe-area-inset-top) + 2px)' }}
       >
-        {/* 左側角色膠囊 */}
         <div className="flex items-center gap-2 pointer-events-auto">
-          <div className="flex items-center gap-2 pl-1 pr-3 py-1.5 rounded-full glass-pill transition-all duration-300 hover:bg-black/60 hover:border-white/20">
+          <div 
+            onClick={() => setInfoMode('full')}
+            className="flex items-center gap-2 pl-1 pr-3 py-1.5 rounded-full glass-pill transition-all duration-300 hover:bg-black/60 hover:border-white/20 cursor-pointer active:scale-95 group"
+          >
             {isMobilePage && (
               <button 
-                onClick={() => navigate('/chat')} 
+                onClick={(e) => { e.stopPropagation(); navigate('/chat'); }} 
                 className="w-8 h-8 flex items-center justify-center rounded-full text-white/50 hover:text-white transition-all duration-300 hover:bg-white/8"
               >
                 <ArrowLeft className="w-4 h-4" />
               </button>
             )}
-            <img 
-              src={currentConv.character.avatar_url || ''} 
-              className="w-8 h-8 rounded-full object-cover ring-1 ring-white/10 shrink-0 shadow-sm" 
-            />
+            <div className="w-8 h-8 rounded-full overflow-hidden ring-1 ring-white/10 shrink-0 shadow-sm flex items-center justify-center bg-white/[0.03]">
+              {currentConv.character.avatar_url ? (
+                <img 
+                  src={currentConv.character.avatar_url} 
+                  className="w-full h-full object-cover" 
+                  alt=""
+                />
+              ) : (
+                <span className="text-[10px] font-bold text-white/40">{currentConv.character.name[0]}</span>
+              )}
+            </div>
             <div className="flex flex-col">
               <span className="text-[13px] font-bold text-white leading-tight tracking-tight">
                 {currentConv.character.name}
@@ -190,7 +241,12 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
 
         {/* 右側功能膠囊 (Merged Block) */}
         <div className="flex items-center gap-0.5 px-1 py-1.5 rounded-full glass-pill pointer-events-auto transition-all duration-300 hover:bg-black/60 hover:border-white/20">
-          <ModelSwitcher minimalist={true} />
+          <ModelSwitcher 
+            minimalist={true} 
+            conversationId={conversationId} 
+            modelId={currentConv.model_id || undefined}
+            onSelect={(id) => updateConversationModel(conversationId, id)}
+          />
           <div className="w-[1px] h-3.5 bg-white/10 mx-0.5" />
           <button className="w-8 h-8 flex items-center justify-center rounded-full text-white/50 hover:text-white transition-all duration-300 hover:bg-white/8">
             <Menu className="w-4 h-4" />
@@ -201,7 +257,7 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
       <div 
         className="absolute inset-0 bg-cover bg-center pointer-events-none z-0"
         style={{
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.4) 40%, rgba(0,0,0,0.95)), url(${currentConv.character.avatar_url || ''})`,
+          backgroundImage: `linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.4) 40%, rgba(0,0,0,0.95)), url(${currentConv.bg_image_url || currentConv.character.avatar_url || ''})`,
           filter: 'brightness(0.7)',
         }}
       />
@@ -220,10 +276,11 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
 
         {/* 角色簡介卡 (簡短版) */}
         <div 
-          onClick={() => setShowInfo(true)}
+          onClick={() => setInfoMode('simple')}
           className={cn(
-            "mx-auto mb-5 w-full max-w-lg p-5 rounded-3xl glass-md shadow-2xl relative transition-all duration-300",
-            "opacity-90 hover:opacity-100 cursor-pointer"
+            "mx-auto mb-4 w-full max-w-lg p-4 rounded-2xl relative transition-all duration-200",
+            "bg-white/[0.04] border border-white/5 cursor-pointer active:scale-[0.98]",
+            "md:glass-md md:shadow-xl" // 僅在電腦版保留模糊效果
           )}
         >
           <div className="flex items-start gap-3">
@@ -238,51 +295,231 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
           </div>
         </div>
 
-        {/* 角色詳細資訊 (懸浮式) */}
-        {showInfo && createPortal(
-          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
-            {/* 背景點擊收起 */}
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setShowInfo(false)} />
+        {/* 隱藏的檔案選擇器用於背景上傳 */}
+        <input 
+          type="file" 
+          ref={fileInputRef} 
+          className="hidden" 
+          accept="image/*"
+          onChange={async (e) => {
+            const file = e.target.files?.[0]
+            if (!file || !user) return
             
-            {/* 彈窗主體 */}
-            <div className="relative w-full max-w-md p-6 rounded-[32px] glass-md border border-white/10 shadow-2xl animate-in zoom-in-95 duration-200">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <img src={currentConv.character.avatar_url || ''} className="w-12 h-12 rounded-2xl object-cover border border-white/10" />
-                  <h3 className="text-lg font-bold text-white">{currentConv.character.name}</h3>
-                </div>
-                <button 
-                  onClick={() => setShowInfo(false)}
-                  className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 text-white/40 hover:text-white hover:bg-white/10 transition-all"
-                >
-                  <X className="w-5 h-5" />
+            try {
+              setIsUploadingBg(true)
+              const ext = file.name.split('.').pop()
+              const path = `${user.id}/${Date.now()}.${ext}`
+              
+              const { error: uploadError } = await supabase.storage
+                .from('backgrounds')
+                .upload(path, file)
+                
+              if (uploadError) throw uploadError
+              
+              const { data: { publicUrl } } = supabase.storage
+                .from('backgrounds')
+                .getPublicUrl(path)
+                
+              await updateConversationBg(conversationId, publicUrl)
+              // 上傳成功後重新獲取清單
+              fetchBgHistory()
+              modal.alert('背景圖上傳成功！', { title: '上傳完成' })
+            } catch (err: any) {
+              console.error('Upload error:', err)
+              modal.alert('圖片上傳失敗：' + (err.message || '未知錯誤'), { title: '錯誤' })
+            } finally {
+              setIsUploadingBg(false)
+              if (fileInputRef.current) fileInputRef.current.value = ''
+            }
+          }}
+        />
+
+        {/* 背景藝廊彈窗 */}
+        {showBgGallery && createPortal(
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-xl animate-in fade-in duration-300" onClick={() => setShowBgGallery(false)} />
+            <div className="relative w-full max-w-lg bg-[#0C0C0C] border border-white/10 rounded-[32px] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[80vh]">
+              <div className="px-6 py-5 border-b border-white/5 flex items-center justify-between shrink-0">
+                <h3 className="text-[17px] font-black text-white tracking-tight">選擇背景圖</h3>
+                <button onClick={() => setShowBgGallery(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 text-white/40 hover:text-white transition-all">
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
-              <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
-                <div>
-                  <h4 className="text-[11px] font-bold text-white/30 uppercase tracking-widest mb-3">角色簡介</h4>
-                  <p className="text-[15px] text-white/80 leading-relaxed font-medium">
+              <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {/* 清除背景 */}
+                  <button 
+                    onClick={async () => {
+                      await updateConversationBg(conversationId, '');
+                      setShowBgGallery(false);
+                    }}
+                    className="aspect-[3/4] rounded-2xl border border-dashed border-white/10 flex flex-col items-center justify-center gap-2 hover:bg-white/5 transition-all group"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/20 group-hover:text-white/40">
+                      <Trash2 className="w-5 h-5" />
+                    </div>
+                    <span className="text-[11px] font-bold text-white/30">無 (預設)</span>
+                  </button>
+
+                  {/* 新增上傳 */}
+                    <button 
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingBg}
+                    className="aspect-[3/4] rounded-2xl border border-dashed border-primary/20 bg-primary/5 flex flex-col items-center justify-center gap-2 hover:bg-primary/10 transition-all group overflow-hidden relative"
+                  >
+                    {isUploadingBg ? (
+                      <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                    ) : (
+                      <>
+                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                          <Upload className="w-4 h-4" />
+                        </div>
+                        <span className="text-[11px] font-bold text-primary/80">上傳圖片</span>
+                      </>
+                    )}
+                  </button>
+
+                  {bgHistory.map((url, i) => (
+                    <div key={i} className="relative group aspect-[3/4] rounded-2xl overflow-hidden border border-white/5 hover:border-primary/50 transition-all">
+                      <button 
+                        onClick={async () => {
+                          await updateConversationBg(conversationId, url);
+                          setShowBgGallery(false);
+                        }}
+                        className="w-full h-full"
+                      >
+                        <img src={url} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                        <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />
+                      </button>
+                      
+                      {/* 刪除按鈕 */}
+                      <button 
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          const segments = url.split('/');
+                          const fileName = segments[segments.length - 1];
+                          if (!fileName || !user) return;
+                          
+                          const { error } = await supabase.storage
+                            .from('backgrounds')
+                            .remove([`${user.id}/${fileName}`]);
+                          
+                          if (!error) fetchBgHistory();
+                        }}
+                        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 backdrop-blur-md border border-white/10 flex items-center justify-center text-white/40 hover:text-red-500 hover:bg-black/80 opacity-0 group-hover:opacity-100 transition-all duration-200"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+        {/* 角色詳細資訊 (極簡緊湊版) */}
+        {infoMode && createPortal(
+          <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setInfoMode(null)} />
+            <div className="relative w-full max-w-lg glass-md border border-white/10 shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden flex flex-col rounded-[32px] max-h-[85vh]">
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-white/5 shrink-0 px-6 py-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl overflow-hidden border border-white/10 bg-white/[0.03] shrink-0">
+                    {currentConv.character.avatar_url ? (
+                      <img src={currentConv.character.avatar_url} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-white/40 font-bold">{currentConv.character.name[0]}</div>
+                    )}
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <h3 className="font-bold text-white text-[17px] truncate">{currentConv.character.name}</h3>
+                    <span className="text-[10px] font-bold text-white/30 uppercase tracking-tighter">Profile Management</span>
+                  </div>
+                </div>
+                <button onClick={() => setInfoMode(null)} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 text-white/40 hover:text-white transition-all">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Action Buttons Toolbar */}
+              <div className="px-5 py-3 border-b border-white/5 shrink-0 bg-white/[0.01]">
+                <div className="grid grid-cols-3 gap-2">
+                  <button 
+                    onClick={() => {
+                      if (currentConv.character.author_id === user?.id) {
+                        setInfoMode(null);
+                        navigate(`/create/${currentConv.character_id}`);
+                      } else {
+                        modal.alert('您不是此角色的創作者，無法進行修改。', { title: '權限不足' });
+                      }
+                    }}
+                    className="flex flex-col items-center justify-center py-2.5 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-primary/10 transition-all active:scale-95 group"
+                  >
+                    <PenLine className="w-4 h-4 text-primary mb-1 group-hover:scale-110 transition-transform" />
+                    <span className="text-[11px] font-bold text-white/80">修改詳情</span>
+                  </button>
+                  
+                  <button 
+                    onClick={() => {
+                      setShowBgGallery(true)
+                      fetchBgHistory()
+                    }}
+                    className="flex flex-col items-center justify-center py-2.5 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-yellow-400/10 transition-all active:scale-95 group"
+                  >
+                    <Upload className="w-4 h-4 text-yellow-500 mb-1 group-hover:scale-110 transition-transform" />
+                    <span className="text-[11px] font-bold text-white/80">更換背景</span>
+                  </button>
+
+                  <div className="flex flex-col items-center justify-center py-2 rounded-xl bg-white/[0.03] border border-white/5">
+                    <span className="text-[8px] font-black text-white/30 uppercase mb-0.5 tracking-tighter">對話模型</span>
+                    <div className="scale-90 origin-center">
+                      <ModelSwitcher 
+                        minimalist={true} 
+                        conversationId={conversationId} 
+                        modelId={currentConv.model_id || undefined}
+                        onSelect={(id) => updateConversationModel(conversationId, id)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Scrollable Area */}
+              <div className="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-3">
+                <div className="space-y-1">
+                  <h4 className="text-[9px] font-black text-primary/60 uppercase tracking-widest flex items-center gap-2">
+                    <div className="w-1 h-1 bg-primary rounded-full" /> 角色描述
+                  </h4>
+                  <p className="text-white/70 text-[13px] leading-relaxed">
                     {currentConv.character.description}
                   </p>
                 </div>
 
-                {(currentConv.character.prompt && currentConv.character.prompt.trim() !== '') && (
-                  <div>
-                    <h4 className="text-[11px] font-bold text-white/30 uppercase tracking-widest mb-3">設定秘辛</h4>
-                    <p className="text-[13px] text-white/40 italic leading-relaxed">
-                      {currentConv.character.prompt}
+                {currentConv.character.greeting && (
+                  <div className="space-y-1">
+                    <h4 className="text-[9px] font-black text-primary/60 uppercase tracking-widest flex items-center gap-2">
+                      <div className="w-1 h-1 bg-primary rounded-full" /> 角色問候語
+                    </h4>
+                    <p className="text-[13px] text-white/50 italic leading-relaxed bg-white/[0.03] p-3.5 rounded-xl border border-white/5">
+                      「{currentConv.character.greeting}」
                     </p>
                   </div>
                 )}
               </div>
 
-              <button 
-                onClick={() => setShowInfo(false)}
-                className="w-full mt-8 py-4 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-bold text-sm transition-all active:scale-[0.98]"
-              >
-                我知道了
-              </button>
+              {/* Footer */}
+              <div className="px-5 py-3.5 border-t border-white/5 shrink-0 flex justify-center">
+                <button 
+                  onClick={() => setInfoMode(null)}
+                  className="w-full max-w-xs py-3 rounded-xl bg-primary text-white font-bold text-sm transition-all active:scale-[0.98] shadow-lg shadow-primary/20"
+                >
+                  確定並返回
+                </button>
+              </div>
             </div>
           </div>,
           document.body
@@ -312,10 +549,10 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
                     onClick={() => toggleMenu(msg.id)}
                     onContextMenu={(e) => handleContextMenu(e, msg)}
                     className={cn(
-                      "px-5 py-3.5 rounded-3xl text-[15px] leading-relaxed transition-all duration-300 relative cursor-pointer select-text focus:outline-none",
+                      "px-4.5 py-3 rounded-2xl text-[15px] leading-relaxed transition-all duration-300 relative cursor-pointer select-text focus:outline-none shadow-sm",
                       isUser 
-                        ? "bg-primary/20 border border-primary/25 backdrop-blur-md text-white font-medium rounded-br-lg shadow-lg shadow-primary/5" 
-                        : "glass-sm text-white/90 rounded-bl-lg shadow-lg"
+                        ? "bg-primary/30 border border-primary/35 text-white font-medium rounded-br-sm shadow-primary/5" 
+                        : "bg-white/[0.12] border border-white/10 text-white/95 rounded-bl-sm"
                     )}
                   >
                     {isEditing ? (
@@ -340,7 +577,7 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
                   {isLast && !isEditing && (
                     <div className="flex items-center gap-1 mt-1 animate-in fade-in slide-in-from-top-1 duration-200">
                       {isUser ? (
-                        <div className="flex items-center gap-0.5 px-2 py-1 bg-white/[0.08] border border-white/8 rounded-full shadow-sm backdrop-blur-md">
+                        <div className="flex items-center gap-0.5 px-2 py-1 bg-white/[0.12] border border-white/10 rounded-full shadow-sm">
                           <button 
                             onClick={() => { navigator.clipboard.writeText(msg.content); }} 
                             className="p-1.5 text-white/35 hover:text-white/90 transition-all" 
@@ -358,7 +595,7 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
                           </button>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-0.5 px-2.5 py-1 bg-white/[0.08] border border-white/8 rounded-full shadow-sm backdrop-blur-md">
+                        <div className="flex items-center gap-0.5 px-2.5 py-1 bg-white/[0.12] border border-white/10 rounded-full shadow-sm">
                           <button 
                             onClick={() => { navigator.clipboard.writeText(msg.content); }} 
                             className="p-1.5 text-white/35 hover:text-white/90 transition-all" 
@@ -401,7 +638,7 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
 
         {isTyping && (
            <div className="flex w-full justify-start items-end mt-2 mb-2 animate-in fade-in duration-300">
-             <div className="px-5 py-3.5 rounded-[18px] rounded-bl-[5px] bg-white/[0.07] backdrop-blur-sm border border-white/8 inline-flex items-center gap-2 shadow-sm">
+             <div className="px-5 py-3.5 rounded-[18px] rounded-bl-[5px] bg-white/[0.15] border border-white/12 inline-flex items-center gap-2 shadow-sm">
                 <span className="w-1.5 h-1.5 bg-white/60 rounded-full animate-bounce [animation-delay:-0.28s]" />
                 <span className="w-1.5 h-1.5 bg-white/45 rounded-full animate-bounce [animation-delay:-0.14s]" />
                 <span className="w-1.5 h-1.5 bg-white/30 rounded-full animate-bounce" />
@@ -418,7 +655,14 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
           y={contextMenu.y}
           onClose={() => { setContextMenu(null); setActiveMenuId(null); }}
           onCopy={() => handleCopy(contextMenu.msg.content)}
-          onDelete={() => { if(confirm('確定刪除訊息？')) deleteMessage(contextMenu.msg.id); }}
+          onDelete={() => { 
+            modal.confirm('確定刪除訊息？', {
+              title: '刪除確認',
+              confirmText: '確定刪除',
+              destructive: true,
+              onConfirm: () => deleteMessage(contextMenu.msg.id)
+            })
+          }}
           onRollback={() => handleRollback(contextMenu.msg.id)}
           onRemember={() => handleRemember(contextMenu.msg.content)}
           onRewrite={() => {

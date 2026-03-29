@@ -7,10 +7,12 @@ import {
 } from 'lucide-react'
 import type { Profile, Model } from '@/types'
 import { cn } from '@/lib/utils'
+import { useModalStore } from '@/stores/modalStore'
 
 
 export default function AdminPage() {
   const { isAdmin } = useAuth()
+  const modal = useModalStore()
   const [activeTab, setActiveTab] = useState<'users' | 'models'>('users')
   
   // User Management State
@@ -92,7 +94,7 @@ export default function AdminPage() {
       setProfiles(prev => prev.map(p => p.id === id ? { ...p, is_active: !currentStatus } : p))
     } catch (err: any) {
       console.error(err)
-      alert(`更新失敗: ${err.message}`)
+      modal.alert(`更新失敗: ${err.message}`, { title: '系統錯誤' })
     }
   }
 
@@ -107,19 +109,25 @@ export default function AdminPage() {
       setModels(prev => prev.map(m => m.id === id ? { ...m, is_active: !currentStatus } : m))
     } catch (err: any) {
       console.error(err)
-      alert(`更新失敗: ${err.message}`)
+      modal.alert(`更新失敗: ${err.message}`, { title: '系統錯誤' })
     }
   }
 
   const deleteModel = async (id: string) => {
-    if (!confirm('確定要刪除此模型嗎？')) return
-    try {
-      const { error } = await supabase.from('models').delete().eq('id', id)
-      if (error) throw error
-      setModels(prev => prev.filter(m => m.id !== id))
-    } catch (err: any) {
-      alert(`刪除失敗: ${err.message}`)
-    }
+    modal.confirm('確定要刪除此模型嗎？', {
+      title: '刪除確認',
+      confirmText: '確定刪除',
+      destructive: true,
+      onConfirm: async () => {
+        try {
+          const { error } = await supabase.from('models').delete().eq('id', id)
+          if (error) throw error
+          setModels(prev => prev.filter(m => m.id !== id))
+        } catch (err: any) {
+          modal.alert(`刪除失敗: ${err.message}`, { title: '系統錯誤' })
+        }
+      }
+    })
   }
 
   const saveModel = async () => {
@@ -173,7 +181,7 @@ export default function AdminPage() {
       }
       setIsEditingModel(null)
     } catch (err: any) {
-      alert(`儲存失敗: ${err.message}`)
+      modal.alert(`儲存失敗: ${err.message}`, { title: '系統錯誤' })
     }
   }
 
@@ -245,7 +253,7 @@ export default function AdminPage() {
                 )}
               </h2>
 
-              <div className="flex bg-white/5 p-1 rounded-xl border border-white/5 self-start sm:self-auto">
+              <div className="flex bg-white/5 p-1 rounded-xl border border-white/5 self-start sm:self-auto overflow-x-auto print:hidden">
                 {[
                   { id: 'all', label: '全部', icon: Users },
                   { id: 'active', label: '已啟用', icon: CheckCircle },
@@ -255,7 +263,7 @@ export default function AdminPage() {
                     key={f.id}
                     onClick={() => setUserFilter(f.id as any)}
                     className={cn(
-                      "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
+                      "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap",
                       userFilter === f.id 
                         ? "bg-white/10 text-white shadow-sm border border-white/10" 
                         : "text-white/40 hover:text-white/60 hover:bg-white/[0.02]"
@@ -275,9 +283,9 @@ export default function AdminPage() {
               </div>
             </div>
             
-            <div className="glass-md rounded-3xl overflow-hidden shadow-2xl">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[600px]">
+            <div className="md:glass-md md:rounded-3xl overflow-hidden md:shadow-2xl">
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-white/5 bg-white/[0.02]">
                       <th className="p-5 text-[11px] font-bold text-white/30 uppercase tracking-widest">User</th>
@@ -319,7 +327,7 @@ export default function AdminPage() {
                               ? 'bg-green-500/10 text-green-500 border-green-500/20' 
                               : 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
                           }`}>
-                            {profile.is_active ? '啟用中' : '審核中'}
+                            {profile.is_active ? '已啟用' : '待審核'}
                           </div>
                         </td>
                         <td className="p-4 text-right">
@@ -343,6 +351,61 @@ export default function AdminPage() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+
+              {/* Mobile Cards for Users */}
+              <div className="flex flex-col gap-4 md:hidden">
+                {profiles
+                  .filter(p => {
+                    if (userFilter === 'active') return p.is_active
+                    if (userFilter === 'inactive') return !p.is_active
+                    return true
+                  })
+                  .map(profile => (
+                    <div key={profile.id} className="glass-md p-5 rounded-[28px] border border-white/5 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <img 
+                            src={profile.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + profile.username} 
+                            alt={profile.username}
+                            className="w-12 h-12 rounded-full bg-white/5 object-cover ring-1 ring-white/10"
+                          />
+                          <div>
+                            <p className="font-bold text-[16px] text-white/90 leading-tight">{profile.username}</p>
+                            <p className="text-[10px] text-white/30 uppercase tracking-widest font-mono mt-1">
+                              ID: {profile.id.split('-')[0]}
+                            </p>
+                          </div>
+                        </div>
+                        <div className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${
+                          profile.is_active 
+                            ? 'bg-green-500/10 text-green-500 border-green-500/20' 
+                            : 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
+                        }`}>
+                          {profile.is_active ? '已啟用' : '待審核'}
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between pt-3 border-t border-white/5">
+                        <span className="text-[11px] text-white/20 font-medium">加入: {new Date(profile.created_at).toLocaleDateString()}</span>
+                        <button
+                          onClick={() => toggleUserActive(profile.id, profile.is_active)}
+                          className={cn(
+                            "inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all",
+                            profile.is_active
+                              ? "bg-red-500/10 text-red-500 border border-red-500/20"
+                              : "bg-green-500 text-white shadow-md shadow-green-500/20"
+                          )}
+                        >
+                          {profile.is_active ? (
+                            <><XCircle className="w-4 h-4" /> 停用</>
+                          ) : (
+                            <><CheckCircle className="w-4 h-4" /> 啟用</>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
               </div>
             </div>
           </div>
@@ -375,9 +438,9 @@ export default function AdminPage() {
               </div>
 
               {/* Advanced Filter Row */}
-              <div className="flex flex-wrap items-center gap-3 p-4 rounded-3xl bg-white/[0.02] border border-white/5 relative">
+              <div className="flex flex-col lg:flex-row lg:items-center gap-3 p-4 rounded-[28px] bg-white/[0.02] border border-white/5 relative">
                 {/* Search */}
-                <div className="flex-1 min-w-[200px] relative">
+                <div className="flex-1 relative">
                   <input 
                     type="text"
                     placeholder="搜尋模型名稱或 ID..."
@@ -392,85 +455,87 @@ export default function AdminPage() {
                   )}
                 </div>
 
-                {/* Provider Filter */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-white/30 uppercase tracking-wider whitespace-nowrap">供應商:</span>
-                  <div className="relative">
-                    <button
-                      onClick={() => setShowProviderFilterDropdown(!showProviderFilterDropdown)}
-                      onBlur={() => setTimeout(() => setShowProviderFilterDropdown(false), 200)}
-                      className="min-w-[120px] bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white flex items-center justify-between hover:border-white/20 transition-all"
-                    >
-                      <span className="capitalize">{providerFilter === 'all' ? '全部' : providerFilter}</span>
-                      <ChevronDown className={cn("w-3.5 h-3.5 text-white/20 transition-transform ml-2", showProviderFilterDropdown && "rotate-180")} />
-                    </button>
-                    
-                    {showProviderFilterDropdown && (
-                      <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-[#111318] border border-white/10 rounded-2xl shadow-2xl py-2 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                        <button
-                          className="w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition-colors flex items-center justify-between"
-                          onClick={() => { setProviderFilter('all'); setShowProviderFilterDropdown(false); }}
-                        >
-                          <span>全部</span>
-                          {providerFilter === 'all' && <CheckCircle className="w-3.5 h-3.5 text-primary" />}
-                        </button>
-                        {Array.from(new Set(models.map(m => m.provider))).sort().map(p => (
+                <div className="flex flex-wrap items-center gap-3">
+                  {/* Provider Filter */}
+                  <div className="flex items-center gap-2 flex-1 sm:flex-none">
+                    <span className="text-[10px] font-bold text-white/30 uppercase tracking-wider whitespace-nowrap hidden sm:inline">供應商:</span>
+                    <div className="relative flex-1 sm:flex-none">
+                      <button
+                        onClick={() => setShowProviderFilterDropdown(!showProviderFilterDropdown)}
+                        onBlur={() => setTimeout(() => setShowProviderFilterDropdown(false), 200)}
+                        className="w-full sm:min-w-[120px] bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white flex items-center justify-between hover:border-white/20 transition-all"
+                      >
+                        <span className="capitalize">{providerFilter === 'all' ? '全部供應商' : providerFilter}</span>
+                        <ChevronDown className={cn("w-3.5 h-3.5 text-white/20 transition-transform ml-2", showProviderFilterDropdown && "rotate-180")} />
+                      </button>
+                      
+                      {showProviderFilterDropdown && (
+                        <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-[#111318] border border-white/10 rounded-2xl shadow-2xl py-2 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                           <button
-                            key={p}
                             className="w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition-colors flex items-center justify-between"
-                            onClick={() => { setProviderFilter(p); setShowProviderFilterDropdown(false); }}
+                            onClick={() => { setProviderFilter('all'); setShowProviderFilterDropdown(false); }}
                           >
-                            <span className="capitalize">{p}</span>
-                            {providerFilter === p && <CheckCircle className="w-3.5 h-3.5 text-primary" />}
+                            <span>全部</span>
+                            {providerFilter === 'all' && <CheckCircle className="w-3.5 h-3.5 text-primary" />}
                           </button>
-                        ))}
-                      </div>
-                    )}
+                          {Array.from(new Set(models.map(m => m.provider))).sort().map(p => (
+                            <button
+                              key={p}
+                              className="w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition-colors flex items-center justify-between"
+                              onClick={() => { setProviderFilter(p); setShowProviderFilterDropdown(false); }}
+                            >
+                              <span className="capitalize">{p}</span>
+                              {providerFilter === p && <CheckCircle className="w-3.5 h-3.5 text-primary" />}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                {/* Category Filter */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-white/30 uppercase tracking-wider whitespace-nowrap">分類:</span>
-                  <div className="relative">
-                    <button
-                      onClick={() => setShowCategoryFilterDropdown(!showCategoryFilterDropdown)}
-                      onBlur={() => setTimeout(() => setShowCategoryFilterDropdown(false), 200)}
-                      className="min-w-[120px] bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white flex items-center justify-between hover:border-white/20 transition-all"
-                    >
-                      <span>{categoryFilter === 'all' ? '全部' : categoryFilter}</span>
-                      <ChevronDown className={cn("w-3.5 h-3.5 text-white/20 transition-transform ml-2", showCategoryFilterDropdown && "rotate-180")} />
-                    </button>
-                    
-                    {showCategoryFilterDropdown && (
-                      <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-[#111318] border border-white/10 rounded-2xl shadow-2xl py-2 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                        <button
-                          className="w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition-colors flex items-center justify-between"
-                          onClick={() => { setCategoryFilter('all'); setShowCategoryFilterDropdown(false); }}
-                        >
-                          <span>全部</span>
-                          {categoryFilter === 'all' && <CheckCircle className="w-3.5 h-3.5 text-primary" />}
-                        </button>
-                        {Array.from(new Set(models.map(m => m.category))).sort().map(c => (
+                  {/* Category Filter */}
+                  <div className="flex items-center gap-2 flex-1 sm:flex-none">
+                    <span className="text-[10px] font-bold text-white/30 uppercase tracking-wider whitespace-nowrap hidden sm:inline">分類:</span>
+                    <div className="relative flex-1 sm:flex-none">
+                      <button
+                        onClick={() => setShowCategoryFilterDropdown(!showCategoryFilterDropdown)}
+                        onBlur={() => setTimeout(() => setShowCategoryFilterDropdown(false), 200)}
+                        className="w-full sm:min-w-[120px] bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white flex items-center justify-between hover:border-white/20 transition-all"
+                      >
+                        <span>{categoryFilter === 'all' ? '全部分類' : categoryFilter}</span>
+                        <ChevronDown className={cn("w-3.5 h-3.5 text-white/20 transition-transform ml-2", showCategoryFilterDropdown && "rotate-180")} />
+                      </button>
+                      
+                      {showCategoryFilterDropdown && (
+                        <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-[#111318] border border-white/10 rounded-2xl shadow-2xl py-2 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                           <button
-                            key={c}
                             className="w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition-colors flex items-center justify-between"
-                            onClick={() => { setCategoryFilter(c); setShowCategoryFilterDropdown(false); }}
+                            onClick={() => { setCategoryFilter('all'); setShowCategoryFilterDropdown(false); }}
                           >
-                            <span>{c}</span>
-                            {categoryFilter === c && <CheckCircle className="w-3.5 h-3.5 text-primary" />}
+                            <span>全部</span>
+                            {categoryFilter === 'all' && <CheckCircle className="w-3.5 h-3.5 text-primary" />}
                           </button>
-                        ))}
-                      </div>
-                    )}
+                          {Array.from(new Set(models.map(m => m.category))).sort().map(c => (
+                            <button
+                              key={c}
+                              className="w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition-colors flex items-center justify-between"
+                              onClick={() => { setCategoryFilter(c); setShowCategoryFilterDropdown(false); }}
+                            >
+                              <span>{c}</span>
+                              {categoryFilter === c && <CheckCircle className="w-3.5 h-3.5 text-primary" />}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="glass-md rounded-3xl overflow-hidden shadow-2xl">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[800px]">
+            <div className="md:glass-md md:rounded-3xl overflow-hidden md:shadow-2xl">
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-white/5 bg-white/[0.02]">
                       <th className="p-5 text-xs font-bold text-white/30 uppercase tracking-widest">Provider / Name</th>
@@ -568,6 +633,83 @@ export default function AdminPage() {
                   </tbody>
                 </table>
               </div>
+
+              {/* Mobile Cards for Models */}
+              <div className="grid grid-cols-1 gap-4 md:hidden">
+                {models
+                  .filter(m => {
+                    const matchProvider = providerFilter === 'all' || m.provider === providerFilter;
+                    const matchCategory = categoryFilter === 'all' || m.category === categoryFilter;
+                    const searchLower = modelSearch.toLowerCase();
+                    const matchSearch = !modelSearch || 
+                      m.name.toLowerCase().includes(searchLower) || 
+                      m.model_id.toLowerCase().includes(searchLower);
+                    return matchProvider && matchCategory && matchSearch;
+                  })
+                  .map(m => (
+                    <div key={m.id} className="glass-md p-5 rounded-[28px] border border-white/5 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          {m.icon_url ? (
+                            <img src={m.icon_url} className="w-10 h-10 rounded-xl object-cover" alt="" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
+                              <Database className="w-5 h-5 opacity-40" />
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <p className="font-bold text-[15px] truncate">{m.name}</p>
+                            <span className="text-[10px] text-white/30 uppercase tracking-widest font-mono truncate block">{m.provider}</span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => toggleModelActive(m.id, m.is_active)}
+                          className={cn(
+                            "w-11 h-6 rounded-full relative transition-colors duration-200 shrink-0",
+                            m.is_active ? "bg-green-500" : "bg-muted border border-border"
+                          )}
+                        >
+                          <div className={cn(
+                            "absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform duration-200 shadow-sm",
+                            m.is_active ? "translate-x-5" : "translate-x-0"
+                          )} />
+                        </button>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap gap-1.5 p-3 rounded-2xl bg-white/[0.03] border border-white/5">
+                           <span className="px-2 py-0.5 rounded-lg bg-primary/10 text-primary text-[10px] uppercase font-black border border-primary/20">
+                              {m.category}
+                            </span>
+                            {m.tags && m.tags.slice(0, 3).map((tag, i) => (
+                              <span key={i} className="px-2 py-0.5 rounded-lg bg-muted/50 text-[10px] font-bold text-muted-foreground border border-border">
+                                {tag}
+                              </span>
+                            ))}
+                        </div>
+                        <p className="text-[10px] text-white/20 font-mono pl-1 uppercase tracking-tighter truncate">ID: {m.model_id}</p>
+                      </div>
+
+                      <div className="flex gap-2 pt-2 border-t border-white/5">
+                        <button
+                          onClick={() => {
+                            setEditForm({ ...m, tags: m.tags || [] })
+                            setIsEditingModel(m.id)
+                          }}
+                          className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white/5 font-bold text-sm text-white/80 hover:bg-white/10"
+                        >
+                          <Edit className="w-4 h-4" /> 編輯
+                        </button>
+                        <button
+                          onClick={() => deleteModel(m.id)}
+                          className="p-2.5 rounded-xl bg-red-500/10 text-red-500 border border-red-500/20"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+              </div>
             </div>
           </div>
         )}
@@ -577,7 +719,7 @@ export default function AdminPage() {
       {isEditingModel && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
           <div className="glass-lg w-full max-w-2xl rounded-[32px] overflow-hidden shadow-[0_32px_128px_rgba(0,0,0,0.8)] animate-in zoom-in-95 duration-300">
-            <div className="p-8 border-b border-white/5 flex items-center justify-between">
+            <div className="p-5 md:p-8 border-b border-white/5 flex items-center justify-between">
               <h3 className="text-xl font-bold tracking-tight">{isEditingModel === 'new' ? 'Create Model' : 'Edit Model'}</h3>
               <button 
                 onClick={() => setIsEditingModel(null)}
@@ -587,13 +729,13 @@ export default function AdminPage() {
               </button>
             </div>
             
-            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+            <div className="p-5 md:p-6 space-y-5 max-h-[70vh] overflow-y-auto custom-scrollbar">
               {/* Row 1: Basic Info */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-muted-foreground ml-1">名稱 (顯示用)</label>
                   <input
-                    className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-sm"
+                    className="w-full bg-muted border border-border rounded-xl px-4 py-2.5 text-sm"
                     value={editForm.name || ''}
                     onChange={e => setEditForm(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="例如: Gemini 1.5 Pro"
@@ -608,7 +750,7 @@ export default function AdminPage() {
                       onBlur={() => {
                         setTimeout(() => setShowProviderDropdown(false), 200)
                       }}
-                      className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-sm flex items-center justify-between hover:border-white/20 transition-all text-left"
+                      className="w-full bg-muted border border-border rounded-xl px-4 py-2.5 text-sm flex items-center justify-between hover:border-white/20 transition-all text-left"
                     >
                       <span className="capitalize">{editForm.provider || 'google'}</span>
                       <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform", showProviderDropdown && "rotate-180")} />
@@ -644,11 +786,11 @@ export default function AdminPage() {
               </div>
 
               {/* Row 2: Model ID & Key Name */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-muted-foreground ml-1">模型 ID (API 識別項)</label>
                   <input
-                    className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-sm font-mono"
+                    className="w-full bg-muted border border-border rounded-xl px-4 py-2.5 text-sm font-mono"
                     value={editForm.model_id || ''}
                     onChange={e => setEditForm(prev => ({ ...prev, model_id: e.target.value }))}
                     placeholder="例如: gemini-1.5-pro"
@@ -657,7 +799,7 @@ export default function AdminPage() {
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-muted-foreground ml-1">API Key 變數名稱 (Secrets)</label>
                   <input
-                    className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-sm font-mono"
+                    className="w-full bg-muted border border-border rounded-xl px-4 py-2.5 text-sm font-mono"
                     value={editForm.api_key_name || ''}
                     onChange={e => setEditForm(prev => ({ ...prev, api_key_name: e.target.value.toUpperCase() }))}
                     placeholder="例如: GEMINI"
@@ -669,7 +811,7 @@ export default function AdminPage() {
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-muted-foreground ml-1">客製化 Base URL (可留空)</label>
                 <input
-                  className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-sm font-mono"
+                  className="w-full bg-muted border border-border rounded-xl px-4 py-2.5 text-sm font-mono"
                   value={editForm.base_url || ''}
                   onChange={e => setEditForm(prev => ({ ...prev, base_url: e.target.value }))}
                   placeholder="例如: https://your-proxy.com/v1"
@@ -677,13 +819,13 @@ export default function AdminPage() {
               </div>
 
               {/* Row 4: Category & Icon */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5 relative">
                   <label className="text-xs font-bold text-muted-foreground ml-1">大分類 (如: Gemini, GPT)</label>
                   <div className="relative group">
                     <input
                       autoComplete="off"
-                      className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-sm pr-10 focus:ring-2 focus:ring-primary/20 transition-all"
+                      className="w-full bg-muted border border-border rounded-xl px-4 py-2.5 text-sm pr-10 focus:ring-2 focus:ring-primary/20 transition-all"
                       value={editForm.category || ''}
                       onChange={e => setEditForm(prev => ({ ...prev, category: e.target.value }))}
                       onFocus={() => setShowCategoryDropdown(true)}
@@ -737,7 +879,7 @@ export default function AdminPage() {
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-muted-foreground ml-1">圖示 URL (可不填)</label>
                   <input
-                    className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-sm"
+                    className="w-full bg-muted border border-border rounded-xl px-4 py-2.5 text-sm"
                     value={editForm.icon_url || ''}
                     onChange={e => setEditForm(prev => ({ ...prev, icon_url: e.target.value }))}
                     placeholder="圖片網址..."
@@ -749,7 +891,7 @@ export default function AdminPage() {
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-muted-foreground ml-1">標籤 (以逗號分隔)</label>
                 <input
-                  className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-sm"
+                  className="w-full bg-muted border border-border rounded-xl px-4 py-2.5 text-sm"
                   value={Array.isArray(editForm.tags) ? editForm.tags.join(', ') : editForm.tags || ''}
                   onChange={e => setEditForm(prev => ({ ...prev, tags: e.target.value as any }))}
                   placeholder="例如: Free, Fast, Stable"
@@ -760,7 +902,7 @@ export default function AdminPage() {
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-muted-foreground ml-1">模型介紹 (顯示在切換選單中)</label>
                 <textarea
-                  className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-sm min-h-[80px]"
+                  className="w-full bg-muted border border-border rounded-xl px-4 py-2.5 text-sm min-h-[80px]"
                   value={editForm.description || ''}
                   onChange={e => setEditForm(prev => ({ ...prev, description: e.target.value }))}
                   placeholder="簡單介紹模型的特性..."
@@ -768,16 +910,16 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-border bg-muted/30 flex gap-3">
+            <div className="px-6 py-5 border-t border-border bg-muted/30 flex gap-3">
               <button
                 onClick={() => setIsEditingModel(null)}
-                className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-muted transition-all"
+                className="flex-1 py-3 rounded-xl border border-border text-sm font-medium hover:bg-muted transition-all"
               >
                 取消
               </button>
               <button
                 onClick={saveModel}
-                className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-medium hover:opacity-90 transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
+                className="flex-1 py-3 rounded-xl bg-primary text-white text-sm font-bold hover:brightness-110 transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
               >
                 <Save className="w-4 h-4" />
                 儲存設定

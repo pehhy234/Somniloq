@@ -168,7 +168,7 @@ export type Model = Database['public']['Tables']['models']['Row']
 
 // Extended types for joined queries
 export type ConversationWithCharacter = Conversation & {
-  character: Pick<Character, 'id' | 'name' | 'avatar_url' | 'description'>
+  character: Pick<Character, 'id' | 'name' | 'avatar_url' | 'description' | 'greeting' | 'prompt'>
 }
 
 export type CharacterWithAuthor = Character & {

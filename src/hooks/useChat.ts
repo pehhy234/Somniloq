@@ -7,13 +7,17 @@ import { useUIStore } from '@/stores/uiStore'
 export type ConversationItem = {
   id: string
   character_id: string
+  model_id: string | null
+  bg_image_url: string | null
   updated_at: string
   character: {
     id: string
     name: string
     avatar_url: string | null
     description: string
+    greeting?: string
     prompt?: string
+    author_id: string
     tags?: string[]
   }
   last_message?: {
@@ -32,7 +36,7 @@ export type ChatMessage = {
 export function useChat(conversationId?: string) {
   const { user } = useAuth()
   const queryClient = useQueryClient()
-  const { model } = useUIStore()
+  const { model, setConversationModel } = useUIStore()
 
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isTyping, setIsTyping] = useState(false)
@@ -47,12 +51,17 @@ export function useChat(conversationId?: string) {
         .select(`
           id,
           character_id,
+          model_id,
+          bg_image_url,
           updated_at,
           character:characters (
             id,
             name,
             avatar_url,
-            description
+            description,
+            greeting,
+            prompt,
+            author_id
           ),
           messages:messages (
             content,
@@ -195,6 +204,9 @@ export function useChat(conversationId?: string) {
       // Get the session access token for edge function
       const { data: { session } } = await supabase.auth.getSession()
       
+      const currentConv = conversations.find(c => c.id === conversationId)
+      const activeModelId = currentConv?.model_id || model || 'gemini-1.5-pro'
+
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`, {
         method: 'POST',
         headers: {
@@ -205,7 +217,7 @@ export function useChat(conversationId?: string) {
           conversationId,
           characterId: charId,
           content,
-          model: model || 'gemini-1.5-pro' // Fallback to avoid 400
+          model: activeModelId
         })
       })
 
@@ -259,7 +271,7 @@ export function useChat(conversationId?: string) {
     } finally {
       setIsTyping(false)
     }
-  }, [conversationId, user, queryClient, model])
+  }, [conversationId, user, queryClient, model, conversations])
 
   return {
     conversations,
@@ -279,6 +291,23 @@ export function useChat(conversationId?: string) {
       const { error } = await supabase.from('messages').update({ content } as any).eq('id', msgId)
       if (error) throw error
       setMessages(prev => prev.map(m => m.id === msgId ? { ...m, content } : m))
+    },
+    updateConversationModel: async (convId: string, modelId: string) => {
+      try {
+        // @ts-ignore
+        const { error } = await supabase.from('conversations').update({ model_id: modelId } as any).eq('id', convId)
+        if (error) throw error
+        queryClient.invalidateQueries({ queryKey: ['conversations'] })
+      } catch (err) {
+        console.warn('Failed to sync model to database, using local state fallback:', err)
+        // Fallback to local state if DB update fails
+        setConversationModel(convId, modelId)
+      }
+    },
+    updateConversationBg: async (convId: string, bgUrl: string) => {
+      const { error } = await supabase.from('conversations').update({ bg_image_url: bgUrl } as any).eq('id', convId)
+      if (error) throw error
+      queryClient.invalidateQueries({ queryKey: ['conversations'] })
     },
     regenerateMessage: async (msgId: string, charId: string) => {
       // 1. Find message index

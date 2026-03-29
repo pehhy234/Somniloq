@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useEffect } from 'react'
+import { ModalProvider } from '@/components/ModalProvider'
 import { useAuth } from '@/contexts/AuthContext'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { useUIStore } from '@/stores/uiStore'
@@ -106,6 +107,9 @@ function AppLayout() {
           <Route path="/create" element={
             <ProtectedRoute><CreatePage /></ProtectedRoute>
           } />
+          <Route path="/create/:id" element={
+            <ProtectedRoute><CreatePage /></ProtectedRoute>
+          } />
           <Route path="/profile" element={
             <ProtectedRoute><ProfilePage /></ProtectedRoute>
           } />
@@ -141,6 +145,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AppContent />
+      <ModalProvider />
     </QueryClientProvider>
   )
 }

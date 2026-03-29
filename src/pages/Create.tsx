@@ -1,10 +1,11 @@
-import { useState, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState, useRef, useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
 import { Upload, X, Loader2, RefreshCw, Sparkles, ImagePlus } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
+import { useModalStore } from '@/stores/modalStore'
 
 interface CharacterForm {
   name: string
@@ -25,7 +26,9 @@ const INITIAL_FORM: CharacterForm = {
 }
 
 export default function CreatePage() {
+  const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const modal = useModalStore()
   const queryClient = useQueryClient()
   const { user } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -35,6 +38,42 @@ export default function CreatePage() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
+
+  // 1. Fetch character if editing
+  const { data: existingData, isLoading: isFetching } = useQuery({
+    queryKey: ['character', id],
+    queryFn: async () => {
+      if (!id) return null
+      const { data, error } = await supabase
+        .from('characters')
+        .select('*')
+        .eq('id', id)
+        .single()
+      if (error) throw error
+      return data as any
+    },
+    enabled: !!id,
+  })
+
+  // 同步表單資料
+  useEffect(() => {
+    if (id && existingData) {
+      setForm({
+        name: existingData.name,
+        description: existingData.description || '',
+        greeting: existingData.greeting || '',
+        prompt: existingData.prompt || '',
+        tags: existingData.tags || [],
+        is_public: existingData.is_public ?? false,
+      })
+      if (existingData.avatar_url) setAvatarPreview(existingData.avatar_url)
+    } else if (!id) {
+      // 確保回到新建模式時清空表單
+      setForm(INITIAL_FORM)
+      setAvatarPreview(null)
+      setAvatarFile(null)
+    }
+  }, [id, existingData])
 
   const set = <K extends keyof CharacterForm>(key: K, value: CharacterForm[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -100,9 +139,14 @@ export default function CreatePage() {
         if (!user) throw new Error('請先登入')
         if (!form.name.trim()) throw new Error('請輸入角色名稱')
 
-        let avatar_url: string | null = null
+        // If editing and NOT the author, prevent saving
+        if (id && existingData && existingData.author_id !== user.id) {
+          throw new Error('您不是此角色的作者，無法儲存變更')
+        }
 
-        // Upload avatar to Supabase Storage
+        let avatar_url = avatarPreview
+
+        // Upload avatar to Supabase Storage only if a new file is selected
         if (avatarFile) {
           const ext = avatarFile.name.split('.').pop()
           const path = `${user.id}/${Date.now()}.${ext}`
@@ -116,21 +160,29 @@ export default function CreatePage() {
           avatar_url = urlData.publicUrl
         }
 
-        const { data, error } = await supabase
-          .from('characters')
-          .insert({
-            author_id: user.id,
-            name: form.name.trim(),
-            description: form.description.trim(),
-            greeting: form.greeting.trim(),
-            prompt: form.prompt.trim(),
-            tags: form.tags,
-            is_public: form.is_public,
-            avatar_url,
-          } as any)
-          .select('id')
-          .abortSignal(controller.signal)
-          .single()
+        const payload = {
+          author_id: user.id,
+          name: form.name.trim(),
+          description: form.description.trim(),
+          greeting: form.greeting.trim(),
+          prompt: form.prompt.trim(),
+          tags: form.tags,
+          is_public: form.is_public,
+          avatar_url,
+        }
+
+        const { data, error } = id 
+          ? await supabase
+              .from('characters')
+              .update(payload as any)
+              .eq('id', id)
+              .select('id')
+              .single()
+          : await supabase
+              .from('characters')
+              .insert(payload as any)
+              .select('id')
+              .single()
 
         if (error) {
           throw new Error(`資料庫錯誤: ${error.message} (${error.code || '未知代碼'})`)
@@ -143,6 +195,7 @@ export default function CreatePage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['characters'] })
+      queryClient.invalidateQueries({ queryKey: ['character', id] })
       navigate('/')
     },
   })
@@ -171,8 +224,8 @@ export default function CreatePage() {
               <Sparkles className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <h1 className="text-base font-bold text-foreground leading-none">創造角色</h1>
-              <p className="text-[10px] text-muted-foreground/60 mt-0.5 font-medium uppercase tracking-wider">Character Creator</p>
+              <h1 className="text-base font-bold text-foreground leading-none">{id ? '編輯角色詳情' : '創造角色'}</h1>
+              <p className="text-[10px] text-muted-foreground/60 mt-0.5 font-medium uppercase tracking-wider">{id ? 'Character Editor' : 'Character Creator'}</p>
             </div>
           </div>
           {/* 進度指示 */}
@@ -413,44 +466,75 @@ export default function CreatePage() {
             </div>
 
             {/* Actions */}
-            <div className="flex gap-3 pt-4 border-t border-border/40">
-              <button
-                id="create-reset"
-                onClick={handleReset}
-                type="button"
-                className="flex items-center gap-1.5 px-4 py-3 rounded-2xl text-sm font-semibold text-muted-foreground border border-border hover:bg-muted hover:text-foreground transition-all duration-200 shrink-0 active:scale-95"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                重置
-              </button>
+            <div className="flex gap-3 pt-6 border-t border-border/40 mt-4">
+              {id ? (
+                <>
+                  <button
+                    onClick={() => navigate(-1)}
+                    type="button"
+                    className="flex-1 py-4 rounded-[24px] font-black text-sm text-foreground/70 bg-muted/80 border border-border hover:bg-muted hover:text-foreground transition-all duration-300 active:scale-[0.98]"
+                  >
+                    取消並返回
+                  </button>
 
-              <button
-                id="create-draft"
-                onClick={() => alert('已成功暫存草稿 (模擬)')}
-                type="button"
-                className="flex-1 px-4 py-3 rounded-2xl text-sm font-semibold text-foreground/70 bg-muted/80 border border-border hover:bg-muted hover:text-foreground transition-all duration-200 active:scale-[0.98]"
-              >
-                暫存草稿
-              </button>
+                  <button
+                    id="edit-submit"
+                    onClick={() => createCharacter()}
+                    disabled={isPending || !form.name.trim()}
+                    className={cn(
+                      'flex-[2] flex items-center justify-center gap-2 py-4 rounded-[24px] font-black text-sm transition-all duration-300 shadow-xl shadow-primary/25',
+                      'bg-primary text-white hover:shadow-primary/40 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:scale-100'
+                    )}
+                    style={{ background: 'linear-gradient(135deg, hsl(267, 100%, 72%), hsl(240, 100%, 65%))' }}
+                  >
+                    {isPending ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" />儲存中...</>
+                    ) : (
+                      <><Sparkles className="w-4 h-4" />確認儲存所有變更</>
+                    )}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    id="create-reset"
+                    onClick={handleReset}
+                    type="button"
+                    className="flex items-center gap-1.5 px-4 py-3 rounded-2xl text-sm font-semibold text-muted-foreground border border-border hover:bg-muted hover:text-foreground transition-all duration-200 shrink-0 active:scale-95"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    重置
+                  </button>
 
-              <button
-                id="create-submit"
-                onClick={() => createCharacter()}
-                disabled={isPending || !form.name.trim()}
-                className={cn(
-                  'flex-[2] flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold text-white transition-all duration-200',
-                  'shadow-lg shadow-primary/25 active:scale-[0.98]',
-                  'disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none',
-                  !isPending && form.name.trim() && 'hover:brightness-110 hover:shadow-xl hover:shadow-primary/30'
-                )}
-                style={{ background: 'linear-gradient(135deg, hsl(267, 100%, 72%), hsl(240, 100%, 65%))' }}
-              >
-                {isPending ? (
-                  <><Loader2 className="w-4 h-4 animate-spin" />建立中...</>
-                ) : (
-                  <><Sparkles className="w-4 h-4" />創造角色</>
-                )}
-              </button>
+                  <button
+                    id="create-draft"
+                    onClick={() => modal.alert('已成功暫存草稿 (模擬)', { title: '草稿儲存' })}
+                    type="button"
+                    className="flex-1 px-4 py-3 rounded-2xl text-sm font-semibold text-foreground/70 bg-muted/80 border border-border hover:bg-muted hover:text-foreground transition-all duration-200 active:scale-[0.98]"
+                  >
+                    暫存草稿
+                  </button>
+
+                  <button
+                    id="create-submit"
+                    onClick={() => createCharacter()}
+                    disabled={isPending || !form.name.trim()}
+                    className={cn(
+                      'flex-[2] flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold text-white transition-all duration-200',
+                      'shadow-lg shadow-primary/25 active:scale-[0.98]',
+                      'disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none',
+                      !isPending && form.name.trim() && 'hover:brightness-110 hover:shadow-xl hover:shadow-primary/30'
+                    )}
+                    style={{ background: 'linear-gradient(135deg, hsl(267, 100%, 72%), hsl(240, 100%, 65%))' }}
+                  >
+                    {isPending ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" />建立中...</>
+                    ) : (
+                      <><Sparkles className="w-4 h-4" />創造角色</>
+                    )}
+                  </button>
+                </>
+              )}
             </div>
 
           </div>
