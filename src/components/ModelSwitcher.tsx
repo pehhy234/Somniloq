@@ -199,7 +199,7 @@ export function ModelSwitcher({
               </div>
 
               {/* Model List */}
-              <div className="space-y-2.5 pb-24">
+              <div className="space-y-2.5 pb-2">
                 {isLoading ? (
                   <div className="flex flex-col items-center justify-center p-12 space-y-3 opacity-40">
                     <Zap className="w-8 h-8 animate-pulse text-primary" />
@@ -260,11 +260,11 @@ export function ModelSwitcher({
             </div>
 
             {/* Action Bar */}
-            <div className="p-6 bg-gradient-to-t from-background via-background to-transparent pt-10 mt-auto border-t border-border/50 md:rounded-b-[32px]">
+            <div className="px-6 py-4 bg-background mt-auto border-t border-border/50 md:rounded-b-[32px] shrink-0">
                <div className="flex items-center justify-between gap-4">
                   <div className="min-w-0 flex flex-col focus:outline-none">
-                     <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest pl-0.5">目前選中</span>
-                     <span className="text-base font-extrabold text-yellow-500 truncate tracking-tight">
+                     <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest pl-0.5 mb-0.5">目前選中</span>
+                     <span className="text-[15px] font-extrabold text-yellow-500 truncate tracking-tight">
                         {models.find(m => m.model_id === tempSelectedId)?.name || '請選擇模型'}
                      </span>
                   </div>
@@ -279,7 +279,7 @@ export function ModelSwitcher({
                         }
                         setOpen(false)
                     }}
-                    className="flex-1 max-w-[140px] py-3.5 rounded-2xl bg-primary text-primary-foreground text-sm font-black transition-all active:scale-95 shadow-lg shadow-primary/20 hover:brightness-110"
+                    className="flex-1 max-w-[120px] py-2.5 rounded-xl bg-primary text-primary-foreground text-[14px] font-bold transition-all active:scale-95 shadow-sm shadow-primary/20 hover:brightness-110"
                   >
                     立即應用
                   </button>

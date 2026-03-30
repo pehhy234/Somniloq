@@ -16,6 +16,7 @@ import { ModelSwitcher } from '@/components/ModelSwitcher'
 import { ChatContextMenu } from '@/components/ChatContextMenu'
 import { useModalStore } from '@/stores/modalStore'
 import { Upload } from 'lucide-react'
+import { logger } from '@/lib/logger'
 
 interface ChatRoomContentProps {
   conversationId: string
@@ -133,7 +134,7 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
           setContextMenu(null)
           setActiveMenuId(null)
         } catch (err) {
-          console.error('Rollback failed:', err)
+          logger.error('Rollback failed:', err)
           modal.alert('回溯失敗，請稍後再試', { title: '系統錯誤' })
         }
       }
@@ -142,7 +143,7 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
 
   const handleRemember = (content: string) => {
     // Memory functionality mock
-    console.log('Remembering:', content)
+    logger.log('Remembering:', content)
     modal.alert('AI 已記住此對話重點', { title: '記憶成功' })
   }
 
@@ -168,7 +169,7 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
       })
       setBgHistory(urls)
     } catch (err) {
-      console.error('Fetch history error:', err)
+      logger.error('Fetch history error:', err)
     } finally {
       setIsLoadingHistory(false)
     }
@@ -296,36 +297,50 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
         </div>
 
         {/* 隱藏的檔案選擇器用於背景上傳 */}
-        <input 
-          type="file" 
-          ref={fileInputRef} 
-          className="hidden" 
-          accept="image/*"
+        <input
+          type="file"
+          ref={fileInputRef}
+          className="hidden"
+          accept="image/jpeg,image/png,image/webp,image/gif"
           onChange={async (e) => {
             const file = e.target.files?.[0]
             if (!file || !user) return
-            
+
+            // [Security L-03] MIME whitelist + size check before upload
+            const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+            if (!ALLOWED.includes(file.type)) {
+              modal.alert('只支援 JPEG、PNG、WebP、GIF 格式', { title: '格式不支援' })
+              if (fileInputRef.current) fileInputRef.current.value = ''
+              return
+            }
+            const MAX_BG_SIZE = 10 * 1024 * 1024  // 10MB
+            if (file.size > MAX_BG_SIZE) {
+              modal.alert('圖片大小不可超過 10MB', { title: '檔案過大' })
+              if (fileInputRef.current) fileInputRef.current.value = ''
+              return
+            }
+
             try {
               setIsUploadingBg(true)
               const ext = file.name.split('.').pop()
               const path = `${user.id}/${Date.now()}.${ext}`
-              
+
               const { error: uploadError } = await supabase.storage
                 .from('backgrounds')
                 .upload(path, file)
-                
+
               if (uploadError) throw uploadError
-              
+
               const { data: { publicUrl } } = supabase.storage
                 .from('backgrounds')
                 .getPublicUrl(path)
-                
+
               await updateConversationBg(conversationId, publicUrl)
               // 上傳成功後重新獲取清單
               fetchBgHistory()
               modal.alert('背景圖上傳成功！', { title: '上傳完成' })
             } catch (err: any) {
-              console.error('Upload error:', err)
+              logger.error('Upload error:', err)
               modal.alert('圖片上傳失敗：' + (err.message || '未知錯誤'), { title: '錯誤' })
             } finally {
               setIsUploadingBg(false)

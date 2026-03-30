@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 import { ChatRoomContent } from '@/pages/ChatRoom'
 import { useModalStore } from '@/stores/modalStore'
+import { logger } from '@/lib/logger'
 
 type TabType = 'chat' | 'character'
 
@@ -199,7 +200,7 @@ export default function ChatPage() {
                       const isMobile = window.innerWidth < 768
                       navigate(isMobile ? `/room/${convId}` : `/chat/${convId}`)
                     } catch (e) {
-                      console.error(e)
+                      logger.error('Chat start error:', e)
                     }
                   }}
                   className="w-full flex items-center gap-4 p-4 rounded-2xl bg-background border border-transparent hover:border-border hover:bg-muted/50 transition-all text-left"

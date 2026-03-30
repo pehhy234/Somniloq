@@ -15,8 +15,19 @@ export default function AuthPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
+  // Rate Limiting States
+  const [failCount, setFailCount] = useState(0)
+  const [cooldownUntil, setCooldownUntil] = useState<Date | null>(null)
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (mode === 'login' && cooldownUntil && new Date() < cooldownUntil) {
+      const remainSec = Math.ceil((cooldownUntil.getTime() - Date.now()) / 1000)
+      setError(`登入失敗次數過多，請等待 ${remainSec} 秒後再試`)
+      return
+    }
+
     setError(null)
     setSuccess(null)
     setIsLoading(true)
@@ -35,7 +46,16 @@ export default function AuthPage() {
         setMode('login')
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
-        if (error) throw error
+        if (error) {
+          const newCount = failCount + 1
+          setFailCount(newCount)
+          if (newCount >= 5) {
+            setCooldownUntil(new Date(Date.now() + 30000)) // 30秒鎖定
+            setFailCount(0)
+          }
+          throw error
+        }
+        setFailCount(0) // 成功則重置
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : '發生錯誤，請再試一次'
@@ -43,7 +63,7 @@ export default function AuthPage() {
       if (msg.includes('Invalid login credentials')) setError('電子郵件或密碼不正確')
       else if (msg.includes('Email not confirmed')) setError('請先確認您的電子郵件')
       else if (msg.includes('User already registered')) setError('此電子郵件已被註冊')
-      else if (msg.includes('Password should be')) setError('密碼至少需要 6 個字元')
+      else if (msg.includes('Password should be')) setError('密碼至少需要 8 個字元')
       else setError(msg)
     } finally {
       setIsLoading(false)
@@ -167,7 +187,7 @@ export default function AuthPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  minLength={6}
+                  minLength={8}
                   className={cn(
                     'w-full px-4 py-2.5 pr-10 rounded-lg text-sm transition-all duration-200',
                     'bg-muted border border-border text-foreground placeholder:text-muted-foreground',

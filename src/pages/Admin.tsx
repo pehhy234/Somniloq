@@ -8,6 +8,7 @@ import {
 import type { Profile, Model } from '@/types'
 import { cn } from '@/lib/utils'
 import { useModalStore } from '@/stores/modalStore'
+import { logger } from '@/lib/logger'
 
 
 export default function AdminPage() {
@@ -57,7 +58,7 @@ export default function AdminPage() {
       if (error) throw error
       setProfiles(data || [])
     } catch (err: any) {
-      console.error(err)
+      logger.error('Admin error:', err)
       setError(err.message)
     } finally {
       setIsLoading(false)
@@ -76,7 +77,7 @@ export default function AdminPage() {
       if (error) throw error
       setModels(data || [])
     } catch (err: any) {
-      console.error(err)
+      logger.error('Admin error:', err)
       setError(err.message)
     } finally {
       setIsLoading(false)
@@ -93,7 +94,7 @@ export default function AdminPage() {
       if (error) throw error
       setProfiles(prev => prev.map(p => p.id === id ? { ...p, is_active: !currentStatus } : p))
     } catch (err: any) {
-      console.error(err)
+      logger.error('Admin error:', err)
       modal.alert(`更新失敗: ${err.message}`, { title: '系統錯誤' })
     }
   }
@@ -108,7 +109,7 @@ export default function AdminPage() {
       if (error) throw error
       setModels(prev => prev.map(m => m.id === id ? { ...m, is_active: !currentStatus } : m))
     } catch (err: any) {
-      console.error(err)
+      logger.error('Admin error:', err)
       modal.alert(`更新失敗: ${err.message}`, { title: '系統錯誤' })
     }
   }
@@ -135,49 +136,57 @@ export default function AdminPage() {
       // Formatter function: Capitalize first letter (Title Case)
       const toTitleCase = (str: string) => {
         if (!str) return ''
-        return str.trim().split(' ').map(word => 
+        return str.trim().split(' ').map(word =>
           word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
         ).join(' ')
       }
 
       // Clean up tags
-      const tagsArray = typeof editForm.tags === 'string' 
+      const tagsArray = typeof editForm.tags === 'string'
         ? (editForm.tags as string).split(',').map(t => t.trim()).filter(Boolean)
-        : editForm.tags;
+        : (editForm.tags ?? [])
 
       // Format name and category
-      const formattedName = toTitleCase(editForm.name || '');
-      const formattedCategory = toTitleCase(editForm.category || '');
+      const formattedName = toTitleCase(editForm.name || '')
+      const formattedCategory = toTitleCase(editForm.category || '')
 
       // Handle api_key_name: convert to uppercase and append _API_KEY if missing
-      let apiKeyName = (editForm.api_key_name || '').toUpperCase().trim();
+      let apiKeyName = (editForm.api_key_name || '').toUpperCase().trim()
       if (apiKeyName && !apiKeyName.endsWith('_API_KEY')) {
-        apiKeyName = `${apiKeyName}_API_KEY`;
+        apiKeyName = `${apiKeyName}_API_KEY`
       }
 
-      const payload = { 
-        ...editForm, 
-        name: formattedName,
-        category: formattedCategory,
-        tags: tagsArray, 
-        api_key_name: apiKeyName 
-      };
+      // [Security H-03] Explicit whitelist — never spread editForm directly.
+      // This prevents Mass Assignment: id, created_at, updated_at etc. are excluded.
+      const safePayload = {
+        name:        formattedName,
+        provider:    editForm.provider    ?? 'google',
+        model_id:    editForm.model_id    ?? '',
+        description: editForm.description ?? '',
+        category:    formattedCategory,
+        tags:        tagsArray,
+        is_active:   editForm.is_active   ?? true,
+        api_key_name: apiKeyName,
+        base_url:    editForm.base_url    ?? '',
+        icon_url:    editForm.icon_url    ?? '',
+        // Explicitly excluded: id, created_at, updated_at
+      }
 
       if (isEditingModel === 'new') {
         const { data, error } = await supabase
           .from('models')
-          .insert(payload as any)
+          .insert(safePayload)
           .select()
           .single()
         if (error) throw error
-        setModels(prev => [data, ...prev])
+        setModels(prev => [data as Model, ...prev])
       } else {
         const { error } = await supabase
           .from('models')
-          .update(payload as any)
-          .eq('id', isEditingModel)
+          .update(safePayload)
+          .eq('id', isEditingModel!)
         if (error) throw error
-        setModels(prev => prev.map(m => m.id === isEditingModel ? { ...m, ...payload } : m))
+        setModels(prev => prev.map(m => m.id === isEditingModel ? { ...m, ...safePayload } : m))
       }
       setIsEditingModel(null)
     } catch (err: any) {

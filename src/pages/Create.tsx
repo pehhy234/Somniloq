@@ -105,9 +105,23 @@ export default function CreatePage() {
   }
 
   // ── Avatar upload ──────────────────────────────────────────
+  const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+  const MAX_AVATAR_SIZE = 5 * 1024 * 1024  // 5MB
+
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+    // [Security L-03] Validate MIME type and size before upload
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      modal.alert('只支援 JPEG、PNG、WebP、GIF 格式', { title: '格式不支援' })
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
+    if (file.size > MAX_AVATAR_SIZE) {
+      modal.alert('圖片大小不可超過 5MB', { title: '檔案過大' })
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
     setAvatarFile(file)
     setAvatarPreview(URL.createObjectURL(file))
   }
@@ -116,9 +130,12 @@ export default function CreatePage() {
     e.preventDefault()
     setIsDragging(false)
     const file = e.dataTransfer.files?.[0]
-    if (file && file.type.startsWith('image/')) {
+    // [Security L-03] Strict whitelist check instead of startsWith('image/')
+    if (file && ALLOWED_IMAGE_TYPES.includes(file.type) && file.size <= MAX_AVATAR_SIZE) {
       setAvatarFile(file)
       setAvatarPreview(URL.createObjectURL(file))
+    } else if (file) {
+      modal.alert('只支援 JPEG、PNG、WebP、GIF（最大 5MB）', { title: '格式或大小不符' })
     }
   }
 
@@ -160,27 +177,28 @@ export default function CreatePage() {
           avatar_url = urlData.publicUrl
         }
 
-        const payload = {
-          author_id: user.id,
-          name: form.name.trim(),
-          description: form.description.trim(),
-          greeting: form.greeting.trim(),
-          prompt: form.prompt.trim(),
-          tags: form.tags,
-          is_public: form.is_public,
+        // [Security] Explicit payload — max lengths enforced at DB layer too
+        const safePayload = {
+          author_id:   user.id,
+          name:        form.name.trim().slice(0, 100),
+          description: form.description.trim().slice(0, 500),
+          greeting:    form.greeting.trim().slice(0, 2000),
+          prompt:      form.prompt.trim().slice(0, 8000),
+          tags:        form.tags.slice(0, 20),  // max 20 tags
+          is_public:   form.is_public,
           avatar_url,
         }
 
-        const { data, error } = id 
+        const { data, error } = id
           ? await supabase
               .from('characters')
-              .update(payload as any)
+              .update(safePayload)
               .eq('id', id)
               .select('id')
               .single()
           : await supabase
               .from('characters')
-              .insert(payload as any)
+              .insert(safePayload)
               .select('id')
               .single()
 

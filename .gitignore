@@ -28,3 +28,10 @@ dist-ssr
 
 # .agent stuff (if you want to ignore it)
 .agent/
+
+# Other
+"test_*.ts" 
+"check_*.ts" 
+Security.md
+Security1.md
+

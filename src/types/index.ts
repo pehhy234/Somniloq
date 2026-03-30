@@ -87,6 +87,7 @@ export interface Database {
           bg_image_url?: string | null
         }
         Update: {
+          model_id?: string | null
           bg_image_url?: string | null
           updated_at?: string
         }

@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from './useAuth'
 import { useUIStore } from '@/stores/uiStore'
+import { logger } from '@/lib/logger'
 
 export type ConversationItem = {
   id: string
@@ -211,7 +212,8 @@ export function useChat(conversationId?: string) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`
+          'Authorization': `Bearer ${session?.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
         },
         body: JSON.stringify({
           conversationId,
@@ -262,7 +264,7 @@ export function useChat(conversationId?: string) {
         queryClient.invalidateQueries({ queryKey: ['conversations'] })
       }
     } catch (err) {
-      console.error('Streaming error:', err)
+      logger.error('Streaming error:', err)
       // Remove temp assistant message or show error mark
       setMessages(prev => [
         ...prev.filter(msg => msg.id !== tempAssistantId),
@@ -288,24 +290,23 @@ export function useChat(conversationId?: string) {
       setMessages(prev => prev.filter(m => m.id !== msgId))
     },
     updateMessage: async (msgId: string, content: string) => {
-      const { error } = await supabase.from('messages').update({ content } as any).eq('id', msgId)
+      const { error } = await supabase.from('messages').update({ content }).eq('id', msgId)
       if (error) throw error
       setMessages(prev => prev.map(m => m.id === msgId ? { ...m, content } : m))
     },
     updateConversationModel: async (convId: string, modelId: string) => {
       try {
-        // @ts-ignore
-        const { error } = await supabase.from('conversations').update({ model_id: modelId } as any).eq('id', convId)
+        const { error } = await supabase.from('conversations').update({ model_id: modelId }).eq('id', convId)
         if (error) throw error
         queryClient.invalidateQueries({ queryKey: ['conversations'] })
       } catch (err) {
-        console.warn('Failed to sync model to database, using local state fallback:', err)
+        logger.warn('Failed to sync model to database, using local state fallback:', err)
         // Fallback to local state if DB update fails
         setConversationModel(convId, modelId)
       }
     },
     updateConversationBg: async (convId: string, bgUrl: string) => {
-      const { error } = await supabase.from('conversations').update({ bg_image_url: bgUrl } as any).eq('id', convId)
+      const { error } = await supabase.from('conversations').update({ bg_image_url: bgUrl }).eq('id', convId)
       if (error) throw error
       queryClient.invalidateQueries({ queryKey: ['conversations'] })
     },

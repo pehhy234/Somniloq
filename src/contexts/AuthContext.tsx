@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import type { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
+import { logger } from '@/lib/logger'
 import type { Profile } from '@/types'
 
 interface AuthContextValue {
@@ -36,11 +37,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) {
         // If it's a "No rows found" error, we handle it as profile=null rather than a failure
         if (error.code === 'PGRST116') {
-          console.warn('Profile not found for user:', userId)
+          logger.warn('Profile not found for user:', userId)
           setProfile(null)
           setProfileError(null)
         } else {
-          console.error('Error loading profile:', error)
+          logger.error('Error loading profile:', error)
           setProfileError(error.message)
           setProfile(null)
         }
@@ -49,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfile(data)
       }
     } catch (err: any) {
-      console.error('Profile load exception:', err)
+      logger.error('Profile load exception:', err)
       setProfileError(err.message || 'Unknown error')
       setProfile(null)
     }

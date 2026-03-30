@@ -7,6 +7,7 @@ import { CharacterCard } from '@/components/CharacterCard'
 import { cn } from '@/lib/utils'
 import type { CharacterWithAuthor } from '@/types'
 import { useAuth } from '@/hooks/useAuth'
+import { logger } from '@/lib/logger'
 
 export default function LobbyPage() {
   const navigate = useNavigate()
@@ -63,7 +64,7 @@ export default function LobbyPage() {
       const convId = await startConversation(character.id);
       navigateToChat(convId);
     } catch (e) {
-      console.error(e)
+      logger.error('handleCardClick Error:', e)
     }
   }
 
