@@ -86,9 +86,9 @@ export default function AdminPage() {
 
   const toggleUserActive = async (id: string, currentStatus: boolean) => {
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ is_active: !currentStatus } as any)
+      const { error } = await (supabase
+        .from('profiles') as any)
+        .update({ is_active: !currentStatus })
         .eq('id', id)
       
       if (error) throw error
@@ -101,9 +101,9 @@ export default function AdminPage() {
 
   const toggleModelActive = async (id: string, currentStatus: boolean) => {
     try {
-      const { error } = await supabase
-        .from('models')
-        .update({ is_active: !currentStatus } as any)
+      const { error } = await (supabase
+        .from('models') as any)
+        .update({ is_active: !currentStatus })
         .eq('id', id)
       
       if (error) throw error
@@ -173,16 +173,16 @@ export default function AdminPage() {
       }
 
       if (isEditingModel === 'new') {
-        const { data, error } = await supabase
-          .from('models')
+        const { data, error } = await (supabase
+          .from('models') as any)
           .insert(safePayload)
           .select()
           .single()
         if (error) throw error
         setModels(prev => [data as Model, ...prev])
       } else {
-        const { error } = await supabase
-          .from('models')
+        const { error } = await (supabase
+          .from('models') as any)
           .update(safePayload)
           .eq('id', isEditingModel!)
         if (error) throw error

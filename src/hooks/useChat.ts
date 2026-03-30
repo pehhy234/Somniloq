@@ -259,8 +259,7 @@ export function useChat(conversationId?: string) {
         }
         
         // Update conversation updated_at
-        // @ts-expect-error supabase types
-        await supabase.from('conversations').update({ updated_at: new Date().toISOString() } as any).eq('id', conversationId)
+        await (supabase.from('conversations') as any).update({ updated_at: new Date().toISOString() }).eq('id', conversationId)
         queryClient.invalidateQueries({ queryKey: ['conversations'] })
       }
     } catch (err) {
@@ -290,13 +289,13 @@ export function useChat(conversationId?: string) {
       setMessages(prev => prev.filter(m => m.id !== msgId))
     },
     updateMessage: async (msgId: string, content: string) => {
-      const { error } = await supabase.from('messages').update({ content }).eq('id', msgId)
+      const { error } = await (supabase.from('messages') as any).update({ content }).eq('id', msgId)
       if (error) throw error
       setMessages(prev => prev.map(m => m.id === msgId ? { ...m, content } : m))
     },
     updateConversationModel: async (convId: string, modelId: string) => {
       try {
-        const { error } = await supabase.from('conversations').update({ model_id: modelId }).eq('id', convId)
+        const { error } = await (supabase.from('conversations') as any).update({ model_id: modelId }).eq('id', convId)
         if (error) throw error
         queryClient.invalidateQueries({ queryKey: ['conversations'] })
       } catch (err) {
@@ -306,7 +305,7 @@ export function useChat(conversationId?: string) {
       }
     },
     updateConversationBg: async (convId: string, bgUrl: string) => {
-      const { error } = await supabase.from('conversations').update({ bg_image_url: bgUrl }).eq('id', convId)
+      const { error } = await (supabase.from('conversations') as any).update({ bg_image_url: bgUrl }).eq('id', convId)
       if (error) throw error
       queryClient.invalidateQueries({ queryKey: ['conversations'] })
     },
@@ -345,8 +344,7 @@ export function useChat(conversationId?: string) {
       const idsToDelete = messages.slice(msgIndex + 1).map(m => m.id)
       if (idsToDelete.length === 0) return
 
-      // @ts-expect-error supabase types
-      const { error } = await supabase.from('messages').delete().in('id', idsToDelete)
+      const { error } = await (supabase.from('messages') as any).delete().in('id', idsToDelete)
       if (error) throw error
       
       setMessages(prev => prev.slice(0, msgIndex + 1))

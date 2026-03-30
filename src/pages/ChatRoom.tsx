@@ -1,11 +1,11 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { createPortal } from 'react-dom'
 import { 
   ArrowLeft, Send, Loader2, 
   Lightbulb, Trash2,
-  ChevronDown, ChevronUp, ChevronRight,
-  Play, X, Menu, Quote,
+  ChevronDown,
+  Play, X, Menu,
   RotateCcw, PenLine, Copy
 } from 'lucide-react'
 import { useChat, ChatMessage } from '@/hooks/useChat'
@@ -30,7 +30,7 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
   const [isUploadingBg, setIsUploadingBg] = useState(false)
   const [showBgGallery, setShowBgGallery] = useState(false)
   const [bgHistory, setBgHistory] = useState<string[]>([])
-  const [isLoadingHistory, setIsLoadingHistory] = useState(false)
+  const [, setIsLoadingHistory] = useState(false)
   const { user, isActive } = useAuth()
   const { 
     messages, isMessagesLoading, isTyping, 

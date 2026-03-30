@@ -46,7 +46,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 // ── Main layout (with nav) ────────────────────────────────────
 function AppLayout() {
-  const { isAuthenticated, isLoading, isActive, profile, profileError, signOut, refreshProfile } = useAuth()
+  const { isAuthenticated, isLoading, profile, profileError, signOut, refreshProfile } = useAuth()
   const location = useLocation()
   const isRoom = location.pathname.startsWith('/room')
 

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
-import { Upload, X, Loader2, RefreshCw, Sparkles, ImagePlus } from 'lucide-react'
+import { X, Loader2, RefreshCw, Sparkles, ImagePlus } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
@@ -40,7 +40,7 @@ export default function CreatePage() {
   const [isDragging, setIsDragging] = useState(false)
 
   // 1. Fetch character if editing
-  const { data: existingData, isLoading: isFetching } = useQuery({
+  const { data: existingData } = useQuery({
     queryKey: ['character', id],
     queryFn: async () => {
       if (!id) return null
@@ -190,14 +190,14 @@ export default function CreatePage() {
         }
 
         const { data, error } = id
-          ? await supabase
-              .from('characters')
+          ? await (supabase
+              .from('characters') as any)
               .update(safePayload)
               .eq('id', id)
               .select('id')
               .single()
-          : await supabase
-              .from('characters')
+          : await (supabase
+              .from('characters') as any)
               .insert(safePayload)
               .select('id')
               .single()
