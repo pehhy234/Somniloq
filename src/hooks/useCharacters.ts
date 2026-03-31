@@ -41,7 +41,7 @@ export function useCharacters(options: UseCharactersOptions = {}) {
         
         const { data: tagData } = await tagQuery
         const allTags = new Set<string>()
-        tagData?.forEach(row => row.tags?.forEach(t => allTags.add(t)))
+        ;(tagData as any[])?.forEach((row: any) => row.tags?.forEach((t: string) => allTags.add(t)))
         
         const matchingTags = Array.from(allTags).filter(t => 
           t.toLowerCase().includes(searchTerm.toLowerCase())

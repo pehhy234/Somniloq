@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, ChevronDown, ChevronUp, Loader2, Sparkles, ArrowRight } from 'lucide-react'
+import { ChevronDown, ChevronUp, Loader2, Sparkles, ArrowRight } from 'lucide-react'
 import { useCharacters, useAllPublicTags } from '@/hooks/useCharacters'
 import { useChat } from '@/hooks/useChat'
 import { CharacterCard } from '@/components/CharacterCard'

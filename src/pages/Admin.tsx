@@ -97,7 +97,7 @@ export default function AdminPage() {
     try {
       const { data, error } = await supabase.from('configs').select('key, value').in('key', ['suggestion_model_id', 'default_chat_model_id'])
       if (!error && data) {
-        data.forEach(item => {
+        ;(data as any[]).forEach((item: any) => {
           if (item.key === 'suggestion_model_id') {
             setSuggestionModelId(item.value)
             setPendingModelId(item.value)

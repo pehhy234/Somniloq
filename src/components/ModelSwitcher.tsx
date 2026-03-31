@@ -46,7 +46,7 @@ export function ModelSwitcher({
     queryKey: ['default_chat_model'],
     queryFn: async () => {
       const { data } = await supabase.from('configs').select('value').eq('key', 'default_chat_model_id').maybeSingle()
-      return data?.value as string | undefined
+      return (data as any)?.value as string | undefined
     }
   })
 
