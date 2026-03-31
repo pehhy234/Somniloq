@@ -68,11 +68,11 @@ export default function ProfilePage() {
         const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path)
         finalAvatarUrl = urlData.publicUrl
       }
-      const { error: updateError } = await supabase.from('profiles').update({
+      const { error: updateError } = await (supabase.from('profiles') as any).update({
         username: editingName.trim(),
         avatar_url: finalAvatarUrl,
         updated_at: new Date().toISOString()
-      } as any).eq('id', profile.id)
+      }).eq('id', profile.id)
       if (updateError) throw updateError
       if (avatarFile && profile.avatar_url) {
         const oldPath = profile.avatar_url.split('/avatars/').pop()
