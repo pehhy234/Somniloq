@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, ChevronDown, ChevronUp, Loader2, Sparkles } from 'lucide-react'
+import { Search, ChevronDown, ChevronUp, Loader2, Sparkles, ArrowRight } from 'lucide-react'
 import { useCharacters, useAllPublicTags } from '@/hooks/useCharacters'
 import { useChat } from '@/hooks/useChat'
 import { CharacterCard } from '@/components/CharacterCard'
@@ -18,6 +18,13 @@ export default function LobbyPage() {
   const [searchInput, setSearchInput] = useState('')
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [tagsExpanded, setTagsExpanded] = useState(false)
+
+  // Auto-reset search when input is completely cleared
+  useEffect(() => {
+    if (searchInput.trim() === '') {
+      setSearch('')
+    }
+  }, [searchInput])
 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
   useEffect(() => {
@@ -71,22 +78,21 @@ export default function LobbyPage() {
   return (
     <div className="min-h-dvh bg-background">
       {/* ── Top search area ── */}
-      <div className="sticky top-0 z-40 bg-background/60 backdrop-blur-2xl border-b border-border/40 shadow-sm px-4 md:px-8 pt-4 md:pt-6 pb-3 md:pb-5 space-y-3">
-        {/* Logo (visible only when not logged in / no desktop nav) */}
-        <div className="flex items-center gap-2 md:hidden">
-          <div
-            className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-            style={{ background: 'linear-gradient(135deg, hsl(267, 100%, 72%), hsl(220, 100%, 65%))' }}
-          >
-            <Sparkles className="w-3.5 h-3.5 text-white" />
+      <div className="sticky top-0 z-40 bg-background/60 backdrop-blur-2xl border-b border-border/40 shadow-sm px-4 md:px-8 pt-3 md:pt-6 pb-3 md:pb-5 space-y-3">
+        {/* Top Row: Logo & Search */}
+        <div className="flex items-center gap-3">
+          {/* Minimal Logo (Mobile Only) */}
+          <div className="flex items-center md:hidden shrink-0">
+            <div
+              className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm"
+              style={{ background: 'linear-gradient(135deg, hsl(267, 100%, 72%), hsl(220, 100%, 65%))' }}
+            >
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
           </div>
-          <span className="font-bold text-foreground">Somniloq</span>
-        </div>
 
-        {/* Search bar */}
-        <form onSubmit={handleSearch} className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          {/* Search bar */}
+          <form onSubmit={handleSearch} className="flex-1 relative">
             <input
               id="lobby-search"
               type="search"
@@ -94,20 +100,26 @@ export default function LobbyPage() {
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="搜尋角色..."
               className={cn(
-                'w-full pl-10 pr-4 py-3 rounded-2xl text-[15px] font-medium transition-all duration-300',
-                'bg-muted/40 border border-border/60 text-foreground placeholder:text-muted-foreground/70 shadow-inner',
-                'focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/50 focus:bg-muted/60'
+                'w-full pl-5 pr-12 py-3 rounded-full text-[15px] font-medium transition-all duration-300',
+                'bg-muted/30 border border-white/5 text-foreground placeholder:text-muted-foreground/50 shadow-inner backdrop-blur-md',
+                'focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/30 focus:bg-muted/50 focus:shadow-md'
               )}
             />
-          </div>
-          <button
-            type="submit"
-            className="px-5 py-3 rounded-2xl text-[15px] font-bold text-white transition-all duration-300 hover:brightness-110 hover:shadow-[0_0_20px_rgba(168,85,247,0.4)] active:scale-95 shrink-0"
-            style={{ background: 'linear-gradient(135deg, hsl(267, 100%, 72%), hsl(240, 100%, 65%))' }}
-          >
-            搜尋
-          </button>
-        </form>
+            {/* Minimal Inline Submit Button (dynamic appearance based on input) */}
+            <button
+              type="submit"
+              disabled={!searchInput.trim()}
+              className={cn(
+                'absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-full transition-all duration-300 active:scale-90',
+                searchInput.trim() 
+                  ? 'bg-primary text-white hover:brightness-110 shadow-md shadow-primary/20' 
+                  : 'bg-primary/10 text-primary/50 hover:bg-primary/20'
+              )}
+            >
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </form>
+        </div>
 
         {/* Tags row */}
         {availableTags.length > 0 && (

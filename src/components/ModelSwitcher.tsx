@@ -36,15 +36,19 @@ export function ModelSwitcher({
     setContextCompression 
   } = useUIStore()
   
-  const selectedModelId = modelId || (conversationId && conversationModels[conversationId]) || globalModelId
+  const rawSelectedId = modelId || (conversationId && conversationModels[conversationId]) || globalModelId
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState('All')
-  const [tempSelectedId, setTempSelectedId] = useState(selectedModelId)
 
-  useEffect(() => {
-    setTempSelectedId(selectedModelId)
-  }, [selectedModelId])
+  // Fetch default chat model setting
+  const { data: defaultConfig } = useQuery({
+    queryKey: ['default_chat_model'],
+    queryFn: async () => {
+      const { data } = await supabase.from('configs').select('value').eq('key', 'default_chat_model_id').maybeSingle()
+      return data?.value as string | undefined
+    }
+  })
 
   // Fetch models from Supabase
   const { data: models = [], isLoading } = useQuery({
@@ -58,6 +62,29 @@ export function ModelSwitcher({
       return data as Model[]
     }
   })
+
+  const selectedModelId = useMemo(() => {
+    if (models.length === 0) return rawSelectedId
+    
+    // Check if the currently requested model actually exists
+    if (models.some(m => m.model_id === rawSelectedId)) {
+      return rawSelectedId
+    }
+    
+    // Fallback to database default if it exists
+    if (defaultConfig && models.some(m => m.model_id === defaultConfig)) {
+      return defaultConfig
+    }
+    
+    // Ultimate fallback
+    return models[0]?.model_id || rawSelectedId
+  }, [rawSelectedId, models, defaultConfig])
+
+  const [tempSelectedId, setTempSelectedId] = useState(selectedModelId)
+
+  useEffect(() => {
+    setTempSelectedId(selectedModelId)
+  }, [selectedModelId])
 
   // Dynamically generate categories based on existing models
   const categories = useMemo(() => {

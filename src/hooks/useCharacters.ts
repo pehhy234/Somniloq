@@ -32,11 +32,33 @@ export function useCharacters(options: UseCharactersOptions = {}) {
       }
 
       if (search.trim()) {
-        query = query.or(
-          `name.ilike.%${search}%,description.ilike.%${search}%`
+        const searchTerm = search.trim()
+        
+        // 1. Fetch available tags to find fuzzy matches
+        let tagQuery = supabase.from('characters').select('tags')
+        if (publicOnly) tagQuery = tagQuery.eq('is_public', true)
+        if (authorId) tagQuery = tagQuery.eq('author_id', authorId)
+        
+        const { data: tagData } = await tagQuery
+        const allTags = new Set<string>()
+        tagData?.forEach(row => row.tags?.forEach(t => allTags.add(t)))
+        
+        const matchingTags = Array.from(allTags).filter(t => 
+          t.toLowerCase().includes(searchTerm.toLowerCase())
         )
+
+        // 2. Build the OR query: name OR description OR tags
+        let orQuery = `name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`
+        if (matchingTags.length > 0) {
+          // PostgREST array overlap syntax
+          const formattedTags = matchingTags.map(t => `"${t}"`).join(',')
+          orQuery += `,tags.ov.{${formattedTags}}`
+        }
+
+        query = query.or(orQuery)
       }
 
+      // Mandatory AND filter for clicked tags
       if (tags.length > 0) {
         query = query.contains('tags', tags)
       }

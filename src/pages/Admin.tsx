@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { 
   Shield, CheckCircle, XCircle, Loader2, Users, 
-  Database, Plus, Trash2, Edit, Save, X, ChevronDown
+  Database, Plus, Trash2, Edit, Save, X, ChevronDown, Settings
 } from 'lucide-react'
 import type { Profile, Model } from '@/types'
 import { cn } from '@/lib/utils'
@@ -14,7 +14,7 @@ import { logger } from '@/lib/logger'
 export default function AdminPage() {
   const { isAdmin } = useAuth()
   const modal = useModalStore()
-  const [activeTab, setActiveTab] = useState<'users' | 'models'>('users')
+  const [activeTab, setActiveTab] = useState<'users' | 'models' | 'settings'>('users')
   
   // User Management State
   const [profiles, setProfiles] = useState<Profile[]>([])
@@ -34,6 +34,12 @@ export default function AdminPage() {
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
   const [showProviderDropdown, setShowProviderDropdown] = useState(false)
   
+  const [suggestionModelId, setSuggestionModelId] = useState<string>('')
+  const [pendingModelId, setPendingModelId] = useState<string>('')
+  
+  const [defaultChatModelId, setDefaultChatModelId] = useState<string>('')
+  const [pendingDefaultChatModelId, setPendingDefaultChatModelId] = useState<string>('')
+  
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -41,8 +47,11 @@ export default function AdminPage() {
     if (!isAdmin) return
     if (activeTab === 'users') {
       loadProfiles()
-    } else {
+    } else if (activeTab === 'models') {
       loadModels()
+    } else if (activeTab === 'settings') {
+      loadModels()
+      loadSettings()
     }
   }, [isAdmin, activeTab])
 
@@ -81,6 +90,59 @@ export default function AdminPage() {
       setError(err.message)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const loadSettings = async () => {
+    try {
+      const { data, error } = await supabase.from('configs').select('key, value').in('key', ['suggestion_model_id', 'default_chat_model_id'])
+      if (!error && data) {
+        data.forEach(item => {
+          if (item.key === 'suggestion_model_id') {
+            setSuggestionModelId(item.value)
+            setPendingModelId(item.value)
+          } else if (item.key === 'default_chat_model_id') {
+            setDefaultChatModelId(item.value)
+            setPendingDefaultChatModelId(item.value)
+          }
+        })
+      }
+    } catch (err: any) {
+      logger.error('Failed to load settings:', err)
+    }
+  }
+
+  const handleSaveSettings = async () => {
+    if (!pendingModelId || pendingModelId === suggestionModelId) return
+    
+    try {
+      const { error } = await (supabase.from('configs') as any).upsert({ 
+        key: 'suggestion_model_id', 
+        value: pendingModelId,
+        description: 'AI model used for character chat suggestions (the Lightbulb feature)'
+      })
+      if (error) throw error
+      setSuggestionModelId(pendingModelId)
+      modal.alert('建議模型設定已更新並生效。', { title: '儲存成功' })
+    } catch (err: any) {
+      modal.alert(`儲存設定失敗: ${err.message}`, { title: '系統錯誤' })
+    }
+  }
+
+  const handleSaveDefaultChatModel = async () => {
+    if (!pendingDefaultChatModelId || pendingDefaultChatModelId === defaultChatModelId) return
+    
+    try {
+      const { error } = await (supabase.from('configs') as any).upsert({ 
+        key: 'default_chat_model_id', 
+        value: pendingDefaultChatModelId,
+        description: 'Default AI model used for new chat rooms'
+      })
+      if (error) throw error
+      setDefaultChatModelId(pendingDefaultChatModelId)
+      modal.alert('預設對話模型設定已更新並生效。', { title: '儲存成功' })
+    } catch (err: any) {
+      modal.alert(`儲存設定失敗: ${err.message}`, { title: '系統錯誤' })
     }
   }
 
@@ -235,6 +297,16 @@ export default function AdminPage() {
           >
             <Database className="w-4 h-4" />
             Models
+          </button>
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={cn(
+              "flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-all",
+              activeTab === 'settings' ? "bg-white/10 text-white shadow-lg border border-white/10" : "text-white/40 hover:text-white/80"
+            )}
+          >
+            <Settings className="w-4 h-4" />
+            Settings
           </button>
         </div>
       </div>
@@ -418,7 +490,7 @@ export default function AdminPage() {
               </div>
             </div>
           </div>
-        ) : (
+        ) : activeTab === 'models' ? (
           <div className="space-y-6">
             <div className="flex flex-col gap-4">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -718,6 +790,97 @@ export default function AdminPage() {
                       </div>
                     </div>
                   ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Settings className="w-5 h-5 text-primary" />
+              系統全域設定
+            </h2>
+            
+            <div className="md:glass-md p-6 rounded-[28px] border border-white/5 space-y-6 max-w-2xl">
+              <div className="space-y-4 pb-6 border-b border-white/5">
+                <div>
+                  <h3 className="text-sm font-bold text-white/90">【聊天室首推】預設對話模型</h3>
+                  <p className="text-xs text-white/50 leading-relaxed mt-1.5">
+                    選擇當使用者開啟**新聊天室**時，系統預設帶入的 AI 說話模型。若使用者後續自行切換，該聊天室將以使用者的選擇為主。
+                  </p>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="relative flex-1">
+                    <select
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white appearance-none focus:outline-none focus:border-primary/50 transition-all font-mono"
+                      value={pendingDefaultChatModelId || ''}
+                      onChange={(e) => setPendingDefaultChatModelId(e.target.value)}
+                    >
+                      <option value="" disabled className="bg-black">-- 選擇一個預設模型 --</option>
+                      {models.map(m => (
+                        <option key={m.id} value={m.model_id} className="bg-gray-900 border-b border-gray-800 py-2">
+                          {m.name} ({m.model_id})
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 pointer-events-none" />
+                  </div>
+                  
+                  <button
+                    onClick={handleSaveDefaultChatModel}
+                    disabled={!pendingDefaultChatModelId || pendingDefaultChatModelId === defaultChatModelId}
+                    className="shrink-0 px-6 py-3 rounded-xl bg-primary text-white text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-110 transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
+                  >
+                    <Save className="w-4 h-4" />
+                    儲存變更
+                  </button>
+                </div>
+                {pendingDefaultChatModelId === defaultChatModelId && defaultChatModelId && (
+                   <p className="text-[11px] text-green-500 font-medium flex items-center gap-1.5 pt-1">
+                     <CheckCircle className="w-3.5 h-3.5" /> 目前已套用此預設模型
+                   </p>
+                )}
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-bold text-white/90">【聊天室燈泡】AI 建議模型</h3>
+                  <p className="text-xs text-white/50 leading-relaxed mt-1.5">
+                    選擇當使用者點擊聊天室「燈泡」時，負責產生三個劇情建議的模型。建議選擇速度快、成本低的模型（如 Flash 或是 Mini）。
+                  </p>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="relative flex-1">
+                    <select
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white appearance-none focus:outline-none focus:border-primary/50 transition-all font-mono"
+                      value={pendingModelId || ''}
+                      onChange={(e) => setPendingModelId(e.target.value)}
+                    >
+                      <option value="" disabled className="bg-black">-- 選擇一個模型 --</option>
+                      {models.map(m => (
+                        <option key={m.id} value={m.model_id} className="bg-gray-900 border-b border-gray-800 py-2">
+                          {m.name} ({m.model_id})
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 pointer-events-none" />
+                  </div>
+                  
+                  <button
+                    onClick={handleSaveSettings}
+                    disabled={!pendingModelId || pendingModelId === suggestionModelId}
+                    className="shrink-0 px-6 py-3 rounded-xl bg-primary text-white text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-110 transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
+                  >
+                    <Save className="w-4 h-4" />
+                    儲存變更
+                  </button>
+                </div>
+                {pendingModelId === suggestionModelId && suggestionModelId && (
+                   <p className="text-[11px] text-green-500 font-medium flex items-center gap-1.5 pt-1">
+                     <CheckCircle className="w-3.5 h-3.5" /> 目前已套用此模型
+                   </p>
+                )}
               </div>
             </div>
           </div>

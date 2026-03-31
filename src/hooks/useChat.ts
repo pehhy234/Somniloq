@@ -39,8 +39,15 @@ export function useChat(conversationId?: string) {
   const queryClient = useQueryClient()
   const { model, setConversationModel } = useUIStore()
 
-  const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isTyping, setIsTyping] = useState(false)
+  
+  // Helper to update query cache directly instead of local state
+  const setMessages = useCallback((updater: ChatMessage[] | ((prev: ChatMessage[]) => ChatMessage[])) => {
+    if (!conversationId) return
+    queryClient.setQueryData<ChatMessage[]>(['messages', conversationId], (old = []) => {
+      return typeof updater === 'function' ? updater(old) : updater
+    })
+  }, [conversationId, queryClient])
   
   // 1. Fetch conversations list
   const { data: conversations = [], isLoading: isConversationsLoading } = useQuery({
@@ -102,7 +109,7 @@ export function useChat(conversationId?: string) {
   })
 
   // 2. Fetch messages for active conversation
-  const { isLoading: isMessagesLoading } = useQuery({
+  const { data: messages = [], isLoading: isMessagesLoading } = useQuery({
     queryKey: ['messages', conversationId],
     queryFn: async () => {
       if (!conversationId) return []
@@ -113,10 +120,11 @@ export function useChat(conversationId?: string) {
         .order('created_at', { ascending: true })
       
       if (error) throw error
-      setMessages(data as ChatMessage[])
-      return data
+      return data as ChatMessage[]
     },
     enabled: !!conversationId,
+    refetchOnWindowFocus: false,
+    staleTime: Infinity, // Rely on optimistic UI updates instead of background polling
   })
 
   // 3. Start a new conversation
@@ -136,10 +144,14 @@ export function useChat(conversationId?: string) {
         return (existing as any).id
       }
       
+      // Fetch default model id from configs for new conversations
+      const { data: configData } = await supabase.from('configs').select('value').eq('key', 'default_chat_model_id').maybeSingle()
+      const fallbackModel = (configData as any)?.value || model || 'gemini-1.5-pro'
+
       // If none, create new conversation
       const { data, error } = await supabase
         .from('conversations')
-        .insert({ user_id: user.id, character_id: characterId } as any)
+        .insert({ user_id: user.id, character_id: characterId, model_id: fallbackModel } as any)
         .select('id')
         .single<any>()
         
@@ -206,7 +218,12 @@ export function useChat(conversationId?: string) {
       const { data: { session } } = await supabase.auth.getSession()
       
       const currentConv = conversations.find(c => c.id === conversationId)
-      const activeModelId = currentConv?.model_id || model || 'gemini-1.5-pro'
+      let activeModelId = currentConv?.model_id
+      
+      if (!activeModelId) {
+        const { data: configData } = await supabase.from('configs').select('value').eq('key', 'default_chat_model_id').maybeSingle()
+        activeModelId = (configData as any)?.value || model || 'gemini-1.5-pro'
+      }
 
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`, {
         method: 'POST',
@@ -349,13 +366,39 @@ export function useChat(conversationId?: string) {
       
       setMessages(prev => prev.slice(0, msgIndex + 1))
     },
-    getSuggestions: async (_charId: string): Promise<string[]> => {
-      // Mocked for now since edge function deploy failed, but structure is ready
-      return [
-        "你為什麼在這裡？",
-        "我可以幫你什麼嗎？",
-        "這是一個漫長的故事..."
-      ]
+    getSuggestions: async (charId: string): Promise<string[]> => {
+      if (!conversationId) return []
+      
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/suggestions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+          },
+          body: JSON.stringify({
+            conversationId,
+            characterId: charId
+          })
+        })
+
+        if (!response.ok) {
+          throw new Error('呼叫建議模型失敗')
+        }
+
+        const data = await response.json()
+        return data.suggestions || []
+      } catch (err) {
+        logger.error('Suggestions error:', err)
+        return [
+          "（點頭）",
+          "然後呢？",
+          "（保持沉默）"
+        ]
+      }
     }
   }
 }
