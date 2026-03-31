@@ -580,7 +580,7 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
               onTouchEnd={() => clearTimeout(touchTimer.current)}
               onTouchMove={() => clearTimeout(touchTimer.current)}
             >
-              <div className={cn("flex items-end gap-2 max-w-[98] md:max-w-[88%]", isUser && "flex-row-reverse")}>
+              <div className={cn("flex items-end gap-2 w-full max-w-[96%] md:max-w-[75%]", isUser && "flex-row-reverse")}>
                 <div className={cn("flex flex-col gap-1.5 relative group/bubble", isUser && "items-end")}>
                   {/* 主要訊息氣泡 */}
                   <div
@@ -758,7 +758,7 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
             >
               {isSuggesting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lightbulb className="w-4 h-4" />}
             </button>
-            
+
             {/* 中間：文字輸入 */}
             <textarea
               value={input} onChange={(e) => setInput(e.target.value)}
@@ -768,7 +768,7 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
               rows={1}
               disabled={!isActive}
             />
-            
+
             {/* 右側：發送按鈕 */}
             <button
               onClick={handleSend} disabled={!input.trim() || isTyping || !isActive}
@@ -785,6 +785,18 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
 
 export default function ChatRoomPage() {
   const { conversationId } = useParams<{ conversationId: string }>()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    const checkRedirect = () => {
+      if (conversationId && window.innerWidth >= 1024) {
+        navigate(`/chat/${conversationId}`, { replace: true })
+      }
+    }
+    checkRedirect()
+    window.addEventListener('resize', checkRedirect)
+    return () => window.removeEventListener('resize', checkRedirect)
+  }, [conversationId, navigate])
 
   return (
     <div className="h-dvh bg-black flex flex-col relative overflow-hidden font-sans">

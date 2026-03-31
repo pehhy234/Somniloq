@@ -1,6 +1,6 @@
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { MessageCircle, User as UserIcon, Trash2, ChevronRight } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useChat } from '@/hooks/useChat'
 import { useCharacters } from '@/hooks/useCharacters'
 import { useAuth } from '@/hooks/useAuth'
@@ -21,6 +21,17 @@ export default function ChatPage() {
     deleteConversation,
     startConversation
   } = useChat()
+
+  useEffect(() => {
+    const checkRedirect = () => {
+      if (conversationId && window.innerWidth < 1024) {
+        navigate(`/room/${conversationId}`, { replace: true })
+      }
+    }
+    checkRedirect()
+    window.addEventListener('resize', checkRedirect)
+    return () => window.removeEventListener('resize', checkRedirect)
+  }, [conversationId, navigate])
   const { 
     data: myCharacters = [], 
     isLoading: isCharactersLoading 
@@ -29,22 +40,31 @@ export default function ChatPage() {
   const [activeTab, setActiveTab] = useState<TabType>('chat')
   const [swipedId, setSwipedId] = useState<string | null>(null)
 
-  // 處理滑動刪除 (簡單實作)
-  const handleTouchStart = (e: React.TouchEvent, id: string) => {
-    // 記錄起始位置
-    const touch = e.touches[0]
-    const startX = touch.clientX
-    
-    const handleTouchMove = (moveEvent: TouchEvent) => {
-      const moveX = moveEvent.touches[0].clientX
-      if (startX - moveX > 50) {
-        setSwipedId(id)
-      } else if (moveX - startX > 50) {
-        setSwipedId(null)
-      }
+  const [touchStartX, setTouchStartX] = useState<number | null>(null)
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0].clientX)
+  }
+
+  const handleTouchMove = (e: React.TouchEvent, id: string) => {
+    if (touchStartX === null) return
+    const currentX = e.touches[0].clientX
+    const diff = touchStartX - currentX
+
+    // Swipe left to delete
+    if (diff > 50) {
+      setSwipedId(id)
+      setTouchStartX(null)
+    } 
+    // Swipe right to close
+    else if (diff < -50) {
+      setSwipedId(null)
+      setTouchStartX(null)
     }
-    
-    document.addEventListener('touchmove', handleTouchMove as any, { once: true })
+  }
+
+  const handleTouchEnd = () => {
+    setTouchStartX(null)
   }
 
   const modal = useModalStore()
@@ -66,8 +86,8 @@ export default function ChatPage() {
       {/* ── 左欄/手機全屏：列表區域 ── */}
       <div 
         className={cn(
-          "w-full md:w-80 md:min-w-[320px] flex flex-col border-r border-border bg-muted/20 relative",
-          conversationId ? 'hidden md:flex' : 'flex'
+          "w-full lg:w-80 lg:min-w-[320px] flex flex-col border-r border-border bg-muted/20 relative",
+          conversationId ? 'hidden lg:flex' : 'flex'
         )}
       >
         {/* 頂部頁籤切換 */}
@@ -102,7 +122,7 @@ export default function ChatPage() {
         </div>
 
         {/* 列表內容 */}
-        <div className="flex-1 overflow-y-auto px-3 pb-24 md:pb-6 space-y-1.5 relative hide-scrollbar">
+        <div className="flex-1 overflow-y-auto px-3 pb-24 lg:pb-6 space-y-1.5 relative hide-scrollbar">
           {activeTab === 'chat' ? (
             /* 1. 對話列表區 */
             isConversationsLoading ? (
@@ -114,7 +134,9 @@ export default function ChatPage() {
                 <div 
                   key={conv.id} 
                   className="relative group/card overflow-hidden"
-                  onTouchStart={(e) => handleTouchStart(e, conv.id)}
+                  onTouchStart={handleTouchStart}
+                  onTouchMove={(e) => handleTouchMove(e, conv.id)}
+                  onTouchEnd={handleTouchEnd}
                 >
                   {/* ── 手機版：左滑出現的刪除塊 ── */}
                   <div 
@@ -136,7 +158,7 @@ export default function ChatPage() {
                         setSwipedId(null)
                         return
                       }
-                      const isMobile = window.innerWidth < 768
+                      const isMobile = window.innerWidth < 1024
                       navigate(isMobile ? `/room/${conv.id}` : `/chat/${conv.id}`)
                     }}
                     className={cn(
@@ -168,7 +190,7 @@ export default function ChatPage() {
                     </div>
 
                     {/* ── 電腦版：懸浮刪除鈕 ── */}
-                    <div className="hidden md:flex absolute right-4 opacity-0 group-hover/card:opacity-100 transition-all">
+                    <div className="hidden lg:flex absolute right-4 opacity-0 group-hover/card:opacity-100 transition-all">
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
@@ -197,7 +219,7 @@ export default function ChatPage() {
                   onClick={async () => {
                     try {
                       const convId = await startConversation(char.id)
-                      const isMobile = window.innerWidth < 768
+                      const isMobile = window.innerWidth < 1024
                       navigate(isMobile ? `/room/${convId}` : `/chat/${convId}`)
                     } catch (e) {
                       logger.error('Chat start error:', e)
@@ -228,7 +250,7 @@ export default function ChatPage() {
       </div>
 
       {/* ── 右欄：聊天室內容 (電腦版) ── */}
-      <div className="hidden md:flex flex-1 flex-col relative bg-background border-l border-border/50">
+      <div className="hidden lg:flex flex-1 flex-col relative bg-background border-l border-border/50">
         {conversationId ? (
           <ChatRoomContent conversationId={conversationId} />
         ) : (
