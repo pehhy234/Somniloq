@@ -205,6 +205,23 @@ export default function CreatePage() {
         if (error) {
           throw new Error(`資料庫錯誤: ${error.message} (${error.code || '未知代碼'})`)
         }
+
+        // ── 5. Clean up old image if updating and a new one was uploaded ──
+        if (id && avatarFile && existingData?.avatar_url) {
+          try {
+            const oldUrl = existingData.avatar_url;
+            // 從 URL 中提取檔案路徑 (例如: user_id/timestamp.png)
+            const oldPath = oldUrl.split('/avatars/').pop();
+            
+            if (oldPath) {
+              console.log('Cleaning up old avatar:', oldPath);
+              await supabase.storage.from('avatars').remove([oldPath]);
+            }
+          } catch (cleanupError) {
+            console.error('Failed to cleanup old avatar:', cleanupError);
+            // 不拋出錯誤，讓主流程完成 (使用者體驗優先)
+          }
+        }
         
         return data
       } finally {
@@ -285,24 +302,27 @@ export default function CreatePage() {
             <div className="flex flex-col items-center md:items-start">
               <label className={labelClass}>角色圖片</label>
               {avatarPreview ? (
-                <div className="relative w-48 aspect-square md:w-full group">
-                  <img
-                    src={avatarPreview}
-                    alt="preview"
-                    className="w-full h-full object-cover rounded-[32px] border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)]"
-                  />
-                  {/* 懸停遮罩 */}
-                  <div className="absolute inset-0 rounded-[20px] bg-black/0 group-hover:bg-black/30 transition-all duration-200 flex items-center justify-center">
-                    <button
-                      onClick={removeAvatar}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 w-9 h-9 rounded-full bg-black/70 flex items-center justify-center hover:bg-black/90"
-                      aria-label="移除圖片"
-                    >
-                      <X className="w-4 h-4 text-white" />
-                    </button>
+                <div className="relative w-48 aspect-square md:w-full group overflow-hidden rounded-[32px]">
+                  <div 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full h-full cursor-pointer relative transition-transform duration-300 active:scale-95"
+                  >
+                    <img
+                      src={avatarPreview}
+                      alt="preview"
+                      className="w-full h-full object-cover rounded-[32px] border border-white/10"
+                    />
+                    {/* 點擊更換的遮罩提示：取中間平衡點（手機常駐，桌機懸停） */}
+                    <div className="absolute inset-0 bg-black/20 lg:bg-black/0 lg:group-hover:bg-black/40 transition-all duration-300 flex flex-col items-center justify-center">
+                      <ImagePlus className="w-6 h-6 text-white/80 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-300" />
+                      <span className="text-white/70 text-[10px] font-bold tracking-wide mt-2 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-300">
+                        點擊更換圖片
+                      </span>
+                    </div>
                   </div>
-                  {/* 角標 */}
-                  <div className="absolute bottom-2.5 right-2.5 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-sm text-[9px] font-bold text-white/70 uppercase tracking-wider">
+
+                  {/* 角標：僅提示狀態 */}
+                  <div className="absolute bottom-3 right-3 px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-sm text-[9px] font-black text-white/80 uppercase tracking-widest border border-white/10 pointer-events-none">
                     已上傳
                   </div>
                 </div>
@@ -488,9 +508,15 @@ export default function CreatePage() {
               {id ? (
                 <>
                   <button
-                    onClick={() => navigate(-1)}
+                    onClick={() => {
+                      if (window.history.length > 1) {
+                        navigate(-1)
+                      } else {
+                        navigate('/')
+                      }
+                    }}
                     type="button"
-                    className="flex-1 py-4 rounded-[24px] font-black text-sm text-foreground/70 bg-muted/80 border border-border hover:bg-muted hover:text-foreground transition-all duration-300 active:scale-[0.98]"
+                    className="flex-1 py-4 rounded-[24px] font-black text-sm text-foreground/70 bg-muted/80 border border-border hover:bg-muted hover:text-foreground transition-all duration-300 active:scale-[0.95] cursor-pointer"
                   >
                     取消並返回
                   </button>

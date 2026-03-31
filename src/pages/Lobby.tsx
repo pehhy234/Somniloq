@@ -62,7 +62,7 @@ export default function LobbyPage() {
 
     // Navigate helper
     const navigateToChat = (id: string) => {
-      const isMobile = window.innerWidth < 768;
+      const isMobile = window.innerWidth < 1024;
       navigate(isMobile ? `/room/${id}` : `/chat/${id}`);
     }
 
