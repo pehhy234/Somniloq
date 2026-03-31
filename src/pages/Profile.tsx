@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useUIStore } from '@/stores/uiStore'
 import { 
-  Moon, Sun, LogOut, User, Edit2, Check, X, 
+  Moon, Sun, LogOut, User, Edit2, Check, 
   Loader2, ImagePlus, Sparkles, MessageSquare, 
   ShieldCheck, Shield, Settings, Globe
 } from 'lucide-react'
@@ -72,7 +72,7 @@ export default function ProfilePage() {
         username: editingName.trim(),
         avatar_url: finalAvatarUrl,
         updated_at: new Date().toISOString()
-      }).eq('id', profile.id)
+      } as any).eq('id', profile.id)
       if (updateError) throw updateError
       if (avatarFile && profile.avatar_url) {
         const oldPath = profile.avatar_url.split('/avatars/').pop()
