@@ -258,10 +258,19 @@ export default function AdminPage() {
 
   if (!isAdmin) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center min-h-dvh">
-        <Shield className="w-16 h-16 text-muted-foreground mb-4 opacity-50" />
-        <h2 className="text-xl font-bold">權限不足</h2>
-        <p className="text-muted-foreground mt-2">您不是管理員，無法存取此頁面。</p>
+      <div className="flex-1 flex flex-col items-center justify-center min-h-dvh relative overflow-hidden">
+        {/* Background decoration */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-red-500/5 blur-[120px] pointer-events-none" />
+        <div className="relative z-10 text-center space-y-4">
+          <div className="w-20 h-20 rounded-[28px] bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto shadow-lg">
+            <Shield className="w-10 h-10 text-red-500/70" />
+          </div>
+          <h2 className="text-2xl font-black tracking-tight">權限不足</h2>
+          <p className="text-muted-foreground text-sm max-w-xs">您不是管理員，無法存取此頁面。</p>
+          <a href="/" className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-muted border border-border text-sm font-bold hover:bg-muted/80 transition-all">
+            返回大廳
+          </a>
+        </div>
       </div>
     )
   }
@@ -270,10 +279,13 @@ export default function AdminPage() {
     <div className="max-w-6xl mx-auto py-10 px-6 h-full">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-6 border-b border-white/5">
         <div className="flex items-center gap-4">
-          <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20">
+          <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20 shadow-inner">
             <Shield className="w-8 h-8 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">System Admin</h1>
+          <div>
+            <h1 className="text-2xl font-black tracking-tight">System Admin</h1>
+            <p className="text-[11px] text-muted-foreground/50 font-medium uppercase tracking-widest mt-0.5">Administration Panel</p>
+          </div>
         </div>
         
         {/* Tabs */}
@@ -324,15 +336,19 @@ export default function AdminPage() {
           </div>
         ) : activeTab === 'users' ? (
           <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <h2 className="text-lg font-semibold flex items-center gap-2">
-                使用者審核
-                {profiles.filter(p => !p.is_active).length > 0 && (
-                  <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-bold shadow-lg shadow-red-500/20">
-                    {profiles.filter(p => !p.is_active).length} 待審核
-                  </span>
-                )}
-              </h2>
+            {/* Section header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-[24px] bg-white/[0.03] border border-white/5">
+              <div>
+                <h2 className="text-lg font-black flex items-center gap-2">
+                  使用者審核
+                  {profiles.filter(p => !p.is_active).length > 0 && (
+                    <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-bold shadow-lg shadow-red-500/20">
+                      {profiles.filter(p => !p.is_active).length} 待審核
+                    </span>
+                  )}
+                </h2>
+                <p className="text-[11px] text-muted-foreground/50 mt-0.5 font-medium">管理平台使用者帳號審核與狀態控制</p>
+              </div>
 
               <div className="flex bg-white/5 p-1 rounded-xl border border-white/5 self-start sm:self-auto overflow-x-auto print:hidden">
                 {[
@@ -368,11 +384,11 @@ export default function AdminPage() {
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-white/5 bg-white/[0.02]">
-                      <th className="p-5 text-[11px] font-bold text-white/30 uppercase tracking-widest">User</th>
-                      <th className="p-5 text-[11px] font-bold text-white/30 uppercase tracking-widest">Joined</th>
-                      <th className="p-5 text-center text-[11px] font-bold text-white/30 uppercase tracking-widest">Status</th>
-                      <th className="p-5 text-right text-[11px] font-bold text-white/30 uppercase tracking-widest">Actions</th>
+                    <tr className="border-b border-white/8 bg-white/[0.05]">
+                      <th className="p-5 text-[11px] font-black text-white/50 uppercase tracking-widest">User</th>
+                      <th className="p-5 text-[11px] font-black text-white/50 uppercase tracking-widest">Joined</th>
+                      <th className="p-5 text-center text-[11px] font-black text-white/50 uppercase tracking-widest">Status</th>
+                      <th className="p-5 text-right text-[11px] font-black text-white/50 uppercase tracking-widest">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/50">
@@ -494,7 +510,10 @@ export default function AdminPage() {
           <div className="space-y-6">
             <div className="flex flex-col gap-4">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <h2 className="text-lg font-semibold whitespace-nowrap">AI 模型列表</h2>
+                <div>
+                  <h2 className="text-lg font-black whitespace-nowrap">AI 模型列表</h2>
+                  <p className="text-[11px] text-muted-foreground/50 mt-0.5 font-medium">管理可用的 AI 對話模型</p>
+                </div>
                 <button
                   onClick={() => {
                     setEditForm({ 
@@ -511,7 +530,7 @@ export default function AdminPage() {
                     })
                     setIsEditingModel('new')
                   }}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-primary text-white font-bold text-sm hover:brightness-110 transition-all shadow-xl shadow-primary/20"
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-primary text-white font-bold text-sm hover:brightness-110 transition-all shadow-xl shadow-primary/30 cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
                   Add Model
@@ -519,7 +538,7 @@ export default function AdminPage() {
               </div>
 
               {/* Advanced Filter Row */}
-              <div className="flex flex-col lg:flex-row lg:items-center gap-3 p-4 rounded-[28px] bg-white/[0.02] border border-white/5 relative">
+              <div className="flex flex-col lg:flex-row lg:items-center gap-3 p-4 rounded-[28px] bg-white/[0.05] border border-white/8 relative">
                 {/* Search */}
                 <div className="flex-1 relative">
                   <input 
@@ -618,12 +637,12 @@ export default function AdminPage() {
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-white/5 bg-white/[0.02]">
-                      <th className="p-5 text-xs font-bold text-white/30 uppercase tracking-widest">Provider / Name</th>
-                      <th className="p-5 text-xs font-bold text-white/30 uppercase tracking-widest">Model ID</th>
-                      <th className="p-5 text-xs font-bold text-white/30 uppercase tracking-widest">Categories</th>
-                      <th className="p-5 text-center text-xs font-bold text-white/30 uppercase tracking-widest">Status</th>
-                      <th className="p-5 text-right text-xs font-bold text-white/30 uppercase tracking-widest">Options</th>
+                    <tr className="border-b border-white/8 bg-white/[0.05]">
+                      <th className="p-5 text-xs font-black text-white/50 uppercase tracking-widest">Provider / Name</th>
+                      <th className="p-5 text-xs font-black text-white/50 uppercase tracking-widest">Model ID</th>
+                      <th className="p-5 text-xs font-black text-white/50 uppercase tracking-widest">Categories</th>
+                      <th className="p-5 text-center text-xs font-black text-white/50 uppercase tracking-widest">Status</th>
+                      <th className="p-5 text-right text-xs font-black text-white/50 uppercase tracking-widest">Options</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/50">
@@ -795,15 +814,18 @@ export default function AdminPage() {
           </div>
         ) : (
           <div className="space-y-6">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <Settings className="w-5 h-5 text-primary" />
-              系統全域設定
-            </h2>
+            <div>
+              <h2 className="text-lg font-black flex items-center gap-2">
+                <Settings className="w-5 h-5 text-primary" />
+                系統全域設定
+              </h2>
+              <p className="text-[11px] text-muted-foreground/50 mt-1 font-medium">配置全站 AI 設定與預設行為</p>
+            </div>
             
             <div className="md:glass-md p-6 rounded-[28px] border border-white/5 space-y-6 max-w-2xl">
-              <div className="space-y-4 pb-6 border-b border-white/5">
+              <div className="space-y-4 pb-6 border-b border-white/5 pl-4 border-l-2 border-l-primary/40">
                 <div>
-                  <h3 className="text-sm font-bold text-white/90">【聊天室首推】預設對話模型</h3>
+                  <h3 className="text-sm font-black text-white/90">【聊天室首推】預設對話模型</h3>
                   <p className="text-xs text-white/50 leading-relaxed mt-1.5">
                     選擇當使用者開啟**新聊天室**時，系統預設帶入的 AI 說話模型。若使用者後續自行切換，該聊天室將以使用者的選擇為主。
                   </p>
@@ -842,9 +864,9 @@ export default function AdminPage() {
                 )}
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-4 pl-4 border-l-2 border-l-blue-400/40">
                 <div>
-                  <h3 className="text-sm font-bold text-white/90">【聊天室燈泡】AI 建議模型</h3>
+                  <h3 className="text-sm font-black text-white/90">【聊天室燈泡】AI 建議模型</h3>
                   <p className="text-xs text-white/50 leading-relaxed mt-1.5">
                     選擇當使用者點擊聊天室「燈泡」時，負責產生三個劇情建議的模型。建議選擇速度快、成本低的模型（如 Flash 或是 Mini）。
                   </p>

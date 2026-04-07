@@ -593,21 +593,7 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
                         : "bg-white/[0.12] border border-white/10 text-white/95 rounded-bl-sm"
                     )}
                   >
-                    {isEditing ? (
-                      <div className="flex flex-col gap-3 min-w-[240px]">
-                        <textarea
-                          className="bg-black/40 border border-white/10 rounded-2xl p-4 text-[14px] text-white focus:outline-none focus:border-primary/50 min-h-[100px] resize-none"
-                          value={editContent}
-                          onChange={(e) => setEditContent(e.target.value)}
-                          autoFocus
-                        />
-                        <div className="flex justify-end gap-2">
-                          <button onClick={() => setEditingId(null)} className="px-3 py-1.5 text-[11px] text-white/40 hover:text-white transition-colors">取消</button>
-                          <button onClick={() => handleEditSave()} className="px-3.5 py-1.5 text-[11px] bg-primary text-white rounded-full font-bold active:scale-95 transition-transform">儲存</button>
-                        </div>
-                      </div>
-                    ) : (
-                      <span className="break-words inline-block">
+                    <span className="break-words inline-block">
                         {msg.content}
                         {isLast && isTyping && !isUser && !msg.content && (
                           <span className={cn("inline-flex items-center gap-1 translate-y-[1px]", msg.content ? "ml-2" : "")}>
@@ -617,7 +603,6 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
                           </span>
                         )}
                       </span>
-                    )}
                   </div>
 
                   {/* 氣泡下方工具列 (生成中隱藏) */}
@@ -696,6 +681,76 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
         <div ref={msgsEndRef} className="h-10 shrink-0" />
       </div>
 
+      {/* ── 訊息編輯彈窗 (Somniloq Premium Modal) ── */}
+      {editingId && createPortal(
+        <div className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center sm:p-4">
+          {/* 背景遮罩 */}
+          <div 
+            className="absolute inset-0 bg-black/60 backdrop-blur-md animate-in fade-in duration-300" 
+            onClick={() => setEditingId(null)} 
+          />
+          
+          {/* 彈窗內容 - 手機版全屏，電腦版高級卡片 */}
+          <div className={cn(
+            "relative w-full h-full sm:h-[660px] sm:max-w-xl glass-lg flex flex-col",
+            "border border-white/20 sm:border-white/25",
+            "rounded-none sm:rounded-[28px] overflow-hidden",
+            "shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_8px_40px_rgba(0,0,0,0.6)] sm:shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_20px_60px_rgba(0,0,0,0.8)]",
+            "animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-250"
+          )}>
+            {/* Header */}
+            <div className="px-7 py-4 flex items-center justify-between shrink-0 p-safe-top">
+              <div className="flex items-center gap-2.5">
+                <div className="w-1 h-5 rounded-full bg-primary/60" />
+                <span className="text-[13px] font-semibold text-white/40 tracking-wide">編輯回覆</span>
+              </div>
+              <button 
+                onClick={() => setEditingId(null)} 
+                className="w-9 h-9 flex items-center justify-center rounded-full text-white/15 hover:text-white/50 hover:bg-white/5 transition-all active:scale-90"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            {/* 分隔線 */}
+            <div className="h-px bg-gradient-to-r from-transparent via-white/8 to-transparent mx-6 shrink-0" />
+
+            {/* 編輯區 */}
+            <div className="flex-1 overflow-hidden px-7 py-5 flex flex-col">
+              <textarea
+                className="flex-1 w-full bg-transparent text-[15px] sm:text-[16px] text-white/85 outline-none resize-none leading-[1.85] custom-scrollbar placeholder:text-white/15 font-normal"
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                placeholder="在此修改內容..."
+                autoFocus
+              />
+            </div>
+            {/* 分隔線 */}
+            <div className="h-px bg-gradient-to-r from-transparent via-white/8 to-transparent mx-6 shrink-0" />
+
+            {/* Footer */}
+            <div className="px-7 py-6 flex items-center gap-3 shrink-0 p-safe-bottom">
+              {/* 取消 — Ghost */}
+              <button
+                onClick={() => setEditingId(null)}
+                className="h-[52px] px-7 rounded-2xl text-white/40 font-semibold text-[14px] transition-all hover:text-white/70 hover:bg-white/5 active:scale-95 border border-white/10 shrink-0"
+              >
+                取消
+              </button>
+              {/* 確認 — Primary Glow */}
+              <button
+                onClick={() => handleEditSave()}
+                className="flex-1 h-[52px] rounded-2xl bg-primary font-bold text-[14px] text-white flex items-center justify-center gap-2.5 transition-all active:scale-[0.98] hover:brightness-110"
+                style={{ boxShadow: '0 4px 24px rgba(139,92,246,0.45), 0 1px 0 rgba(255,255,255,0.12) inset' }}
+              >
+                <Send className="w-3.5 h-3.5 opacity-80" />
+                保存新版本
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
       {contextMenu && (
         <ChatContextMenu
           x={contextMenu.x}
@@ -742,39 +797,42 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
         )}
 
         {/* 輸入膠囊 */}
-        <div className="flex w-full pointer-events-auto">
+        <div className="flex w-full justify-center pointer-events-auto">
           <div className={cn(
-            "flex-1 flex items-end gap-1.5 glass-pill rounded-[20px] p-1 focus-within:bg-black/70 transition-all duration-300 shadow-[0_4px_24px_rgba(0,0,0,0.3)]",
+            "flex w-full max-w-4xl items-end gap-1.5 glass-pill rounded-[24px] p-1.5 focus-within:bg-black/80 transition-all duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.4)]",
             !isActive && "bg-white/5 opacity-80 cursor-not-allowed"
           )}>
-            {/* 左側：建議按鈕 */}
+            {/* 左側：建議按鈕 - 固定在底部 */}
             <button
               onClick={handleSuggest} disabled={isSuggesting || !isActive}
               className={cn(
-                "w-8 h-8 shrink-0 flex items-center justify-center rounded-full transition-all duration-300 active:scale-95",
-                isSuggesting ? "bg-white/5 text-primary animate-pulse" : "bg-transparent text-yellow-400/80 hover:text-yellow-400 hover:bg-white/5",
+                "w-9 h-9 shrink-0 flex items-center justify-center rounded-full transition-all duration-300 active:scale-95 mb-0.5",
+                isSuggesting ? "bg-white/5 text-primary animate-pulse" : "bg-transparent text-yellow-400/70 hover:text-yellow-400 hover:bg-white/5",
                 !isActive && "opacity-50 grayscale cursor-not-allowed"
               )}
             >
-              {isSuggesting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lightbulb className="w-4 h-4" />}
+              {isSuggesting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lightbulb className="w-4.5 h-4.5" />}
             </button>
 
-            {/* 中間：文字輸入 */}
+            {/* 中間：文字輸入 (動態行數) */}
             <textarea
               value={input} onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
-              placeholder={isActive ? "Start typing..." : "帳號啟用中，功能暫時受限..."}
-              className="flex-1 max-h-32 min-h-[32px] bg-transparent text-[14px] text-white/90 px-1 py-1.5 outline-none resize-none hide-scrollbar placeholder:text-white/20 leading-relaxed font-medium"
-              rows={1}
+              placeholder={isActive ? "開始輸入對話..." : "帳號啟用中，功能暫時受限..."}
+              className={cn(
+                "flex-1 bg-transparent text-[15px] text-white/90 px-1 py-2 outline-none resize-none hide-scrollbar placeholder:text-white/20 leading-relaxed font-medium transition-all duration-200",
+                input ? (isMobilePage ? "h-[84px]" : "h-[160px]") : "h-[36px]"
+              )}
+              rows={input ? (isMobilePage ? 3 : 6) : 1}
               disabled={!isActive}
             />
 
-            {/* 右側：發送按鈕 */}
+            {/* 右側：發送按鈕 - 固定在底部 */}
             <button
               onClick={handleSend} disabled={!input.trim() || isTyping || !isActive}
-              className="w-8 h-8 shrink-0 flex items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/20 active:scale-95 disabled:opacity-30 hover:brightness-110 transition-all duration-200"
+              className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/20 active:scale-95 disabled:opacity-20 hover:brightness-110 transition-all duration-200 mb-0.5"
             >
-              <Send className="w-3.5 h-3.5 ml-[1px]" />
+              <Send className="w-4 h-4 ml-[2px]" />
             </button>
           </div>
         </div>

@@ -247,7 +247,9 @@ export default function CreatePage() {
     'focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/50 focus:bg-muted/60'
   )
 
-  const labelClass = 'block text-xs font-bold text-muted-foreground/70 uppercase tracking-widest mb-2'
+  // Required fields get stronger label color; optional fields stay muted
+  const labelClass = 'block text-xs font-bold text-muted-foreground/60 uppercase tracking-widest mb-2'
+  const labelRequiredClass = 'block text-xs font-bold text-foreground/80 uppercase tracking-widest mb-2'
 
   return (
     <div className="min-h-dvh bg-background" style={{ background: 'radial-gradient(ellipse 80% 50% at 50% -10%, hsl(267 100% 72% / 0.06) 0%, transparent 70%), hsl(var(--background))' }}>
@@ -255,27 +257,31 @@ export default function CreatePage() {
       <div className="sticky top-0 z-40 bg-background/85 backdrop-blur-2xl border-b border-border/60 px-6 py-3.5">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-[10px] bg-primary/15 flex items-center justify-center border border-primary/20">
-              <Sparkles className="w-4 h-4 text-primary" />
+            <div className="w-9 h-9 rounded-[12px] bg-primary/15 flex items-center justify-center border border-primary/20 shadow-inner">
+              <Sparkles className="w-4.5 h-4.5 text-primary" />
             </div>
             <div>
-              <h1 className="text-base font-bold text-foreground leading-none">{id ? '編輯角色詳情' : '創造角色'}</h1>
-              <p className="text-[10px] text-muted-foreground/60 mt-0.5 font-medium uppercase tracking-wider">{id ? 'Character Editor' : 'Character Creator'}</p>
+              <h1 className="text-xl font-black text-foreground leading-none tracking-tight">{id ? '編輯角色' : '創造角色'}</h1>
+              <p className="text-[10px] text-muted-foreground/50 mt-0.5 font-medium uppercase tracking-widest">{id ? 'Character Editor' : 'Character Creator'}</p>
             </div>
           </div>
-          {/* 進度指示 */}
-          <div className="flex items-center gap-2">
+          {/* 進度指示 — 帶文字標籤 */}
+          <div className="hidden sm:flex items-center gap-3">
             {[
               { key: 'name', label: '名稱', filled: !!form.name },
               { key: 'desc', label: '介紹', filled: !!form.description },
               { key: 'prompt', label: 'Prompt', filled: !!form.prompt },
               { key: 'avatar', label: '圖片', filled: !!avatarPreview },
             ].map(({ key, label, filled }) => (
-              <div key={key} className="flex items-center gap-1" title={label}>
+              <div key={key} className="flex items-center gap-1.5">
                 <div className={cn(
-                  "w-1.5 h-1.5 rounded-full transition-all duration-300",
-                  filled ? "bg-primary scale-110" : "bg-border"
+                  "w-2 h-2 rounded-full transition-all duration-300",
+                  filled ? "bg-primary shadow-[0_0_6px_rgba(168,85,247,0.6)]" : "bg-border"
                 )} />
+                <span className={cn(
+                  "text-[10px] font-bold uppercase tracking-wider transition-colors duration-300",
+                  filled ? "text-primary" : "text-muted-foreground/40"
+                )}>{label}</span>
               </div>
             ))}
           </div>
@@ -293,7 +299,7 @@ export default function CreatePage() {
         )}
 
         {/* ── Layout: single col on mobile, two col on desktop ── */}
-        <div className="grid grid-cols-1 md:grid-cols-[320px_1fr] gap-10 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-[320px_1fr] gap-6 md:gap-8 items-start p-6 md:p-8 rounded-[32px] border border-white/5 bg-muted/20 backdrop-blur-sm shadow-[0_8px_40px_rgba(0,0,0,0.2)]">
 
           {/* ── LEFT COLUMN: image + public toggle ── */}
           <div className="space-y-5">
@@ -397,10 +403,10 @@ export default function CreatePage() {
 
             {/* Row 1: Name + Tags (1-line fields) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-              {/* Name */}
+              {/* Name — Required, stronger label */}
               <div className="flex flex-col">
-                <label className={labelClass}>
-                  角色名稱 <span className="text-primary normal-case tracking-normal">*</span>
+                <label className={labelRequiredClass}>
+                  角色名稱 <span className="text-primary normal-case tracking-normal font-black">*</span>
                 </label>
                 <input
                   id="create-name"
@@ -480,10 +486,22 @@ export default function CreatePage() {
               </div>
             </div>
 
-            {/* Row 3: Prompt (full width) */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className={labelClass}>角色設定 (Prompt)</label>
+            {/* ── Section divider before Prompt ── */}
+            <div className="flex items-center gap-3 pt-1">
+              <div className="h-px flex-1 bg-border/40" />
+              <span className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] shrink-0">核心設定</span>
+              <div className="h-px flex-1 bg-border/40" />
+            </div>
+
+            {/* Row 3: Prompt (full width) — Visual hero field */}
+            <div className="rounded-[24px] border border-primary/20 bg-primary/[0.03] p-4 space-y-3 shadow-[0_0_24px_rgba(168,85,247,0.05)]">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <label className={cn(labelRequiredClass, 'mb-0')}>角色設定 (Prompt)</label>
+                  <span className="text-[9px] font-black uppercase tracking-wider text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full">
+                    核心
+                  </span>
+                </div>
                 <span className={cn(
                   "text-[10px] font-bold tabular-nums transition-all duration-200 px-2 py-0.5 rounded-full",
                   form.prompt.length > 1000
@@ -499,7 +517,7 @@ export default function CreatePage() {
                 onChange={(e) => set('prompt', e.target.value)}
                 placeholder={`描述角色的個性、背景、說話方式…\n\n例：你是艾拉，一位25歲的溫柔醫生。你說話輕柔，總是關心對方的感受。你擅長傾聽，會在對話中給予溫暖的鼓勵。`}
                 rows={12}
-                className={cn(inputClass, 'resize-y leading-relaxed min-h-[200px]')}
+                className={cn(inputClass, 'resize-y leading-relaxed min-h-[200px] border-primary/20 focus:ring-primary/50')}
               />
             </div>
 
