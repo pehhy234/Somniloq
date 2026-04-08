@@ -101,8 +101,8 @@ export default function LobbyPage() {
               placeholder="搜尋角色..."
               className={cn(
                 'w-full pl-5 pr-12 py-3 rounded-full text-[15px] font-medium transition-all duration-300',
-                'bg-muted/30 border border-white/5 text-foreground placeholder:text-muted-foreground/50 shadow-inner backdrop-blur-md',
-                'focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/30 focus:bg-muted/50 focus:shadow-md'
+                'bg-muted/60 border border-white/10 text-foreground placeholder:text-muted-foreground/40 shadow-inner backdrop-blur-3xl',
+                'focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 focus:bg-muted/80 focus:shadow-[0_0_20px_rgba(168,85,247,0.15)]'
               )}
             />
             {/* Minimal Inline Submit Button (dynamic appearance based on input) */}

@@ -146,10 +146,9 @@ export default function AuthPage() {
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="你的暱稱"
                   className={cn(
-                    'w-full px-4 py-2.5 rounded-lg text-sm transition-all duration-200',
-                    'bg-muted border border-border text-foreground placeholder:text-muted-foreground',
-                    'focus:outline-none focus:ring-2 focus:border-transparent',
-                    'focus:ring-[hsl(267,100%,72%)]'
+                    'w-full px-4 py-3 rounded-xl text-sm transition-all duration-300',
+                    'bg-muted/60 border border-white/10 text-foreground placeholder:text-muted-foreground/40 shadow-inner',
+                    'focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 focus:bg-muted/80'
                   )}
                 />
               </div>
@@ -167,10 +166,9 @@ export default function AuthPage() {
                 placeholder="your@email.com"
                 required
                 className={cn(
-                  'w-full px-4 py-2.5 rounded-lg text-sm transition-all duration-200',
-                  'bg-muted border border-border text-foreground placeholder:text-muted-foreground',
-                  'focus:outline-none focus:ring-2 focus:border-transparent',
-                  'focus:ring-[hsl(267,100%,72%)]'
+                  'w-full px-4 py-3 rounded-xl text-sm transition-all duration-300',
+                  'bg-muted/60 border border-white/10 text-foreground placeholder:text-muted-foreground/40 shadow-inner',
+                  'focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 focus:bg-muted/80'
                 )}
               />
             </div>
@@ -189,10 +187,9 @@ export default function AuthPage() {
                   required
                   minLength={8}
                   className={cn(
-                    'w-full px-4 py-2.5 pr-10 rounded-lg text-sm transition-all duration-200',
-                    'bg-muted border border-border text-foreground placeholder:text-muted-foreground',
-                    'focus:outline-none focus:ring-2 focus:border-transparent',
-                    'focus:ring-[hsl(267,100%,72%)]'
+                    'w-full px-4 py-3 pr-10 rounded-xl text-sm transition-all duration-300',
+                    'bg-muted/60 border border-white/10 text-foreground placeholder:text-muted-foreground/40 shadow-inner',
+                    'focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 focus:bg-muted/80'
                   )}
                 />
                 <button
@@ -211,13 +208,13 @@ export default function AuthPage() {
               type="submit"
               disabled={isLoading}
               className={cn(
-                'w-full py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
-                'text-primary-foreground shadow-lg',
+                'w-full py-4 rounded-full text-sm font-bold transition-all duration-300',
+                'text-white shadow-[0_0_20px_rgba(79,70,229,0.3)]',
                 'disabled:opacity-50 disabled:cursor-not-allowed',
-                'hover:opacity-90 active:scale-[0.98]'
+                'hover:brightness-110 hover:shadow-[0_0_30px_rgba(79,70,229,0.5)] active:scale-[0.98]'
               )}
               style={{
-                background: 'linear-gradient(135deg, hsl(267, 100%, 72%), hsl(240, 100%, 65%))'
+                background: 'linear-gradient(135deg, hsl(267, 46%, 35%), hsl(244, 52%, 31%))'
               }}
             >
               <div className="absolute inset-0 bg-white/20 opacity-0 hover:opacity-100 transition-opacity rounded-[20px] pointer-events-none" />

@@ -49,12 +49,24 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
   const [contextMenu, setContextMenu] = useState<{ x: number, y: number, msg: ChatMessage } | null>(null)
 
   const msgsEndRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const touchTimer = useRef<any>(null)
 
   // 自動捲動
   useEffect(() => {
     msgsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isTyping])
+
+  // 動態調整輸入框高度
+  useEffect(() => {
+    const textarea = textareaRef.current
+    if (textarea) {
+      textarea.style.height = 'auto'
+      const maxHeight = isMobilePage ? 84 : 160
+      const nextHeight = Math.min(textarea.scrollHeight, maxHeight)
+      textarea.style.height = `${nextHeight}px`
+    }
+  }, [input, isMobilePage])
 
   const handleSend = async () => {
     if (!input.trim() || isTyping || !currentConv || !isActive) return
@@ -552,7 +564,8 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
                 <div className="px-5 py-3.5 border-t border-white/5 shrink-0 flex justify-center animate-in slide-in-from-bottom-2 duration-300">
                   <button
                     onClick={() => setInfoMode(null)}
-                    className="w-full max-w-xs py-3 rounded-xl bg-primary text-white font-bold text-sm transition-all active:scale-[0.98] shadow-lg shadow-primary/20"
+                    className="w-full max-w-xs py-3 rounded-full bg-primary text-white font-bold text-sm transition-all active:scale-[0.98] shadow-[0_0_20px_rgba(79,70,229,0.3)]"
+                    style={{ background: 'linear-gradient(135deg, hsl(267, 46%, 35%), hsl(244, 52%, 31%))' }}
                   >
                     確定並返回
                   </button>
@@ -816,15 +829,18 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
 
             {/* 中間：文字輸入 (動態行數) */}
             <textarea
+              ref={textareaRef}
               value={input} onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
               placeholder={isActive ? "開始輸入對話..." : "帳號啟用中，功能暫時受限..."}
               className={cn(
-                "flex-1 bg-transparent text-[15px] text-white/90 px-1 py-2 outline-none resize-none hide-scrollbar placeholder:text-white/20 leading-relaxed font-medium transition-all duration-200",
-                input ? (isMobilePage ? "h-[84px]" : "h-[160px]") : "h-[36px]"
+                "flex-1 bg-transparent text-[15px] text-white/90 px-1 py-1.5 outline-none resize-none hide-scrollbar placeholder:text-white/20 leading-relaxed font-medium transition-all duration-200",
+                isMobilePage ? "max-h-[84px]" : "max-h-[160px]",
+                "overflow-y-auto"
               )}
-              rows={input ? (isMobilePage ? 3 : 6) : 1}
+              rows={1}
               disabled={!isActive}
+              style={{ height: '36px' }}
             />
 
             {/* 右側：發送按鈕 - 固定在底部 */}

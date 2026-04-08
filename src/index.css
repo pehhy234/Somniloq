@@ -4,14 +4,14 @@
   :root {
     --background: 224 71% 4%;
     --foreground: 213 31% 91%;
-    --muted: 223 47% 11%;
+    --muted: 223 47% 12.5%;
     --muted-foreground: 215.4 16.3% 56.9%;
-    --accent: 216 34% 17%;
+    --accent: 216 34% 18%;
     --accent-foreground: 210 40% 98%;
-    --popover: 224 71% 4%;
+    --popover: 224 71% 4.5%;
     --popover-foreground: 215 20.2% 65.1%;
-    --border: 216 34% 17%;
-    --input: 216 34% 17%;
+    --border: 216 34% 18%;
+    --input: 216 34% 18%;
     --card: 224 71% 4%;
     --card-foreground: 213 31% 91%;
     --primary: 267 100% 72%;
@@ -59,6 +59,10 @@
 
   body {
     background-color: hsl(var(--background));
+    background-image: radial-gradient(circle at 50% -20%, hsl(var(--primary) / 0.08), transparent 70%), 
+                      radial-gradient(circle at 0% 0%, hsl(var(--primary) / 0.03), transparent 40%),
+                      radial-gradient(circle at 100% 100%, hsl(var(--primary) / 0.03), transparent 40%);
+    background-attachment: fixed;
     color: hsl(var(--foreground));
     font-family: 'Inter', 'Noto Sans TC', system-ui, sans-serif;
     min-height: 100dvh;

@@ -530,7 +530,8 @@ export default function AdminPage() {
                     })
                     setIsEditingModel('new')
                   }}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-primary text-white font-bold text-sm hover:brightness-110 transition-all shadow-xl shadow-primary/30 cursor-pointer"
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-full text-white font-bold text-sm transition-all shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:brightness-110 active:scale-[0.98] cursor-pointer"
+                  style={{ background: 'linear-gradient(135deg, hsl(267, 46%, 35%), hsl(244, 52%, 31%))' }}
                 >
                   <Plus className="w-4 h-4" />
                   Add Model

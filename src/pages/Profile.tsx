@@ -161,7 +161,8 @@ export default function ProfilePage() {
                   <button 
                     onClick={handleSave} 
                     disabled={isSaving || !editingName.trim()}
-                    className="flex-[2] px-6 py-3.5 rounded-[20px] bg-primary text-sm font-black text-white shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
+                    className="flex-[2] px-6 py-3.5 rounded-full text-sm font-black text-white shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:brightness-110 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
+                    style={{ background: 'linear-gradient(135deg, hsl(267, 46%, 35%), hsl(244, 52%, 31%))' }}
                   >
                     {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4" /> 儲存變更</>}
                   </button>

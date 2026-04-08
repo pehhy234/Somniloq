@@ -265,26 +265,7 @@ export default function CreatePage() {
               <p className="text-[10px] text-muted-foreground/50 mt-0.5 font-medium uppercase tracking-widest">{id ? 'Character Editor' : 'Character Creator'}</p>
             </div>
           </div>
-          {/* 進度指示 — 帶文字標籤 */}
-          <div className="hidden sm:flex items-center gap-3">
-            {[
-              { key: 'name', label: '名稱', filled: !!form.name },
-              { key: 'desc', label: '介紹', filled: !!form.description },
-              { key: 'prompt', label: 'Prompt', filled: !!form.prompt },
-              { key: 'avatar', label: '圖片', filled: !!avatarPreview },
-            ].map(({ key, label, filled }) => (
-              <div key={key} className="flex items-center gap-1.5">
-                <div className={cn(
-                  "w-2 h-2 rounded-full transition-all duration-300",
-                  filled ? "bg-primary shadow-[0_0_6px_rgba(168,85,247,0.6)]" : "bg-border"
-                )} />
-                <span className={cn(
-                  "text-[10px] font-bold uppercase tracking-wider transition-colors duration-300",
-                  filled ? "text-primary" : "text-muted-foreground/40"
-                )}>{label}</span>
-              </div>
-            ))}
-          </div>
+
         </div>
       </div>
 
@@ -544,10 +525,10 @@ export default function CreatePage() {
                     onClick={() => createCharacter()}
                     disabled={isPending || !form.name.trim()}
                     className={cn(
-                      'flex-[2] flex items-center justify-center gap-2 py-4 rounded-[24px] font-black text-sm transition-all duration-300 shadow-xl shadow-primary/25',
-                      'bg-primary text-white hover:shadow-primary/40 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:scale-100'
+                      'flex-[2] flex items-center justify-center gap-2 py-4 rounded-full font-black text-sm transition-all duration-300',
+                      'bg-primary text-white shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:shadow-[0_0_30px_rgba(79,70,229,0.5)] hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:scale-100'
                     )}
-                    style={{ background: 'linear-gradient(135deg, hsl(267, 100%, 72%), hsl(240, 100%, 65%))' }}
+                    style={{ background: 'linear-gradient(135deg, hsl(267, 46%, 35%), hsl(244, 52%, 31%))' }}
                   >
                     {isPending ? (
                       <><Loader2 className="w-4 h-4 animate-spin" />儲存中...</>
@@ -572,7 +553,7 @@ export default function CreatePage() {
                     id="create-draft"
                     onClick={() => modal.alert('已成功暫存草稿 (模擬)', { title: '草稿儲存' })}
                     type="button"
-                    className="flex-1 px-4 py-3 rounded-2xl text-sm font-semibold text-foreground/70 bg-muted/80 border border-border hover:bg-muted hover:text-foreground transition-all duration-200 active:scale-[0.98]"
+                    className="flex-1 px-4 py-3 rounded-full text-sm font-semibold text-foreground/70 bg-muted/60 border border-white/10 hover:bg-muted/80 hover:text-foreground transition-all duration-200 active:scale-[0.98]"
                   >
                     暫存草稿
                   </button>
@@ -582,12 +563,12 @@ export default function CreatePage() {
                     onClick={() => createCharacter()}
                     disabled={isPending || !form.name.trim()}
                     className={cn(
-                      'flex-[2] flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold text-white transition-all duration-200',
-                      'shadow-lg shadow-primary/25 active:scale-[0.98]',
+                      'flex-[2] flex items-center justify-center gap-2 py-3 rounded-full text-sm font-bold text-white transition-all duration-300',
+                      'shadow-[0_0_20px_rgba(79,70,229,0.3)] active:scale-[0.98]',
                       'disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none',
-                      !isPending && form.name.trim() && 'hover:brightness-110 hover:shadow-xl hover:shadow-primary/30'
+                      !isPending && form.name.trim() && 'hover:brightness-110 hover:shadow-[0_0_30px_rgba(79,70,229,0.5)]'
                     )}
-                    style={{ background: 'linear-gradient(135deg, hsl(267, 100%, 72%), hsl(240, 100%, 65%))' }}
+                    style={{ background: 'linear-gradient(135deg, hsl(267, 46%, 35%), hsl(244, 52%, 31%))' }}
                   >
                     {isPending ? (
                       <><Loader2 className="w-4 h-4 animate-spin" />建立中...</>
