@@ -155,6 +155,7 @@ export default function CreatePage() {
       try {
         if (!user) throw new Error('請先登入')
         if (!form.name.trim()) throw new Error('請輸入角色名稱')
+        if (!form.prompt.trim()) throw new Error('請填寫核心設定 (Prompt)')
 
         // If editing and NOT the author, prevent saving
         if (id && existingData && existingData.author_id !== user.id) {
@@ -183,7 +184,7 @@ export default function CreatePage() {
           name:        form.name.trim().slice(0, 100),
           description: form.description.trim().slice(0, 500),
           greeting:    form.greeting.trim().slice(0, 2000),
-          prompt:      form.prompt.trim().slice(0, 8000),
+          prompt:      form.prompt.trim().slice(0, 20000),
           tags:        form.tags.slice(0, 20),  // max 20 tags
           is_public:   form.is_public,
           avatar_url,
@@ -242,9 +243,9 @@ export default function CreatePage() {
   }
 
   const inputClass = cn(
-    'w-full px-4 py-3.5 rounded-[20px] text-[15px] font-medium transition-all duration-300',
-    'bg-muted/40 border border-white/5 shadow-inner text-foreground placeholder:text-muted-foreground/50',
-    'focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/50 focus:bg-muted/60'
+    'w-full px-4 py-3.5 rounded-xl text-[15px] font-medium transition-all duration-300',
+    'bg-muted/60 border border-white/10 shadow-inner text-foreground placeholder:text-muted-foreground/40',
+    'focus:outline-none focus:border-white/30 focus:bg-muted/80'
   )
 
   // Required fields get stronger label color; optional fields stay muted
@@ -406,9 +407,9 @@ export default function CreatePage() {
                   <span className="ml-1.5 text-[10px] normal-case tracking-normal font-normal text-muted-foreground/40">逗號或空格分隔</span>
                 </label>
                 <div className={cn(
-                  'w-full min-h-[52px] px-3 py-[9px] rounded-[20px] border border-white/5 bg-muted/40 shadow-inner',
+                  'w-full min-h-[52px] px-3 py-[9px] rounded-xl border border-white/10 bg-muted/60 shadow-inner',
                   'flex flex-wrap gap-1.5 items-center',
-                  'focus-within:ring-2 focus-within:ring-primary/40 focus-within:border-primary/50 focus-within:bg-muted/60 transition-all duration-300'
+                  'focus-within:border-white/30 focus-within:bg-muted/80 transition-all duration-300'
                 )}>
                   {form.tags.map((tag) => (
                     <span
@@ -467,39 +468,49 @@ export default function CreatePage() {
               </div>
             </div>
 
-            {/* ── Section divider before Prompt ── */}
-            <div className="flex items-center gap-3 pt-1">
-              <div className="h-px flex-1 bg-border/40" />
-              <span className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] shrink-0">核心設定</span>
-              <div className="h-px flex-1 bg-border/40" />
-            </div>
 
-            {/* Row 3: Prompt (full width) — Visual hero field */}
-            <div className="rounded-[24px] border border-primary/20 bg-primary/[0.03] p-4 space-y-3 shadow-[0_0_24px_rgba(168,85,247,0.05)]">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <label className={cn(labelRequiredClass, 'mb-0')}>角色設定 (Prompt)</label>
-                  <span className="text-[9px] font-black uppercase tracking-wider text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full">
-                    核心
-                  </span>
+            {/* Row 3: Prompt (full width) — Card-like redesign (neutral) */}
+            <div className="relative group">
+              <div className="relative rounded-[24px] border border-white/10 bg-black/40 p-6 space-y-4 shadow-2xl backdrop-blur-md transition-all duration-300 group-focus-within:border-white/20">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <label className={cn(labelRequiredClass, 'mb-0')}>
+                      角色設定 (Prompt) <span className="text-primary normal-case tracking-normal font-black">*</span>
+                    </label>
+                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20">
+                      <Sparkles className="w-3 h-3 text-primary" />
+                      <span className="text-[9px] font-black uppercase tracking-wider text-primary">核心設定</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className={cn(
+                      "flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold tabular-nums transition-all duration-300",
+                      form.prompt.length > 2000
+                        ? "bg-primary/20 text-primary border border-primary/30"
+                        : "bg-white/5 text-muted-foreground/60 border border-white/5"
+                    )}>
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                      {form.prompt.length.toLocaleString()} / 20,000
+                    </div>
+                  </div>
                 </div>
-                <span className={cn(
-                  "text-[10px] font-bold tabular-nums transition-all duration-200 px-2 py-0.5 rounded-full",
-                  form.prompt.length > 1000
-                    ? "text-primary bg-primary/10 border border-primary/20"
-                    : "text-muted-foreground/40"
-                )}>
-                  {form.prompt.length.toLocaleString()} 字元
-                </span>
+                <textarea
+                  id="create-prompt"
+                  value={form.prompt}
+                  onChange={(e) => set('prompt', e.target.value)}
+                  placeholder={`描述角色的個性、背景、說話方式…\n\n例：你是艾拉，一位25歲的輕柔醫生。`}
+                  rows={12}
+                  className={cn(
+                    'w-full px-4 py-4 rounded-xl text-[15px] font-medium leading-relaxed transition-all duration-300',
+                    'bg-white/[0.03] border border-white/5 text-foreground placeholder:text-muted-foreground/30 resize-y min-h-[300px]',
+                    'focus:outline-none focus:border-white/20 focus:bg-white/[0.05]'
+                  )}
+                />
+                <div className="pt-2 flex items-center justify-between opacity-0 group-focus-within:opacity-100 transition-opacity duration-300">
+                  <p className="text-[10px] text-muted-foreground/40 font-medium">提示：豐富的設定能提升對話品質</p>
+                  <RefreshCw className="w-3.5 h-3.5 text-muted-foreground/20" />
+                </div>
               </div>
-              <textarea
-                id="create-prompt"
-                value={form.prompt}
-                onChange={(e) => set('prompt', e.target.value)}
-                placeholder={`描述角色的個性、背景、說話方式…\n\n例：你是艾拉，一位25歲的溫柔醫生。你說話輕柔，總是關心對方的感受。你擅長傾聽，會在對話中給予溫暖的鼓勵。`}
-                rows={12}
-                className={cn(inputClass, 'resize-y leading-relaxed min-h-[200px] border-primary/20 focus:ring-primary/50')}
-              />
             </div>
 
             {/* Actions */}
@@ -523,7 +534,7 @@ export default function CreatePage() {
                   <button
                     id="edit-submit"
                     onClick={() => createCharacter()}
-                    disabled={isPending || !form.name.trim()}
+                    disabled={isPending || !form.name.trim() || !form.prompt.trim()}
                     className={cn(
                       'flex-[2] flex items-center justify-center gap-2 py-4 rounded-full font-black text-sm transition-all duration-300',
                       'bg-primary text-white shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:shadow-[0_0_30px_rgba(79,70,229,0.5)] hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:scale-100'
@@ -561,12 +572,12 @@ export default function CreatePage() {
                   <button
                     id="create-submit"
                     onClick={() => createCharacter()}
-                    disabled={isPending || !form.name.trim()}
+                    disabled={isPending || !form.name.trim() || !form.prompt.trim()}
                     className={cn(
                       'flex-[2] flex items-center justify-center gap-2 py-3 rounded-full text-sm font-bold text-white transition-all duration-300',
                       'shadow-[0_0_20px_rgba(79,70,229,0.3)] active:scale-[0.98]',
                       'disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none',
-                      !isPending && form.name.trim() && 'hover:brightness-110 hover:shadow-[0_0_30px_rgba(79,70,229,0.5)]'
+                      !isPending && form.name.trim() && form.prompt.trim() && 'hover:brightness-110 hover:shadow-[0_0_30px_rgba(79,70,229,0.5)]'
                     )}
                     style={{ background: 'linear-gradient(135deg, hsl(267, 46%, 35%), hsl(244, 52%, 31%))' }}
                   >

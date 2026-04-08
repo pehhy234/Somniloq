@@ -78,82 +78,88 @@ export default function LobbyPage() {
   return (
     <div className="min-h-dvh bg-background">
       {/* ── Top search area ── */}
-      <div className="sticky top-0 z-40 bg-background/60 backdrop-blur-2xl border-b border-border/40 shadow-sm px-4 md:px-8 pt-3 md:pt-6 pb-3 md:pb-5 space-y-3">
-        {/* Top Row: Logo & Search */}
-        <div className="flex items-center gap-3">
-          {/* Minimal Logo (Mobile Only) */}
-          <div className="flex items-center md:hidden shrink-0">
-            <div
-              className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm"
-              style={{ background: 'linear-gradient(135deg, hsl(267, 100%, 72%), hsl(220, 100%, 65%))' }}
-            >
-              <Sparkles className="w-5 h-5 text-white" />
+      <div className="sticky top-0 z-40 bg-background/60 backdrop-blur-3xl border-b border-white/5 shadow-xl px-4 md:px-8 pt-3 md:pt-5 pb-3 md:pb-5">
+        <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-8">
+          {/* 搜尋區塊 - 固定寬度 */}
+          <div className="flex items-center gap-3 shrink-0 md:w-[420px]">
+            {/* Minimal Logo (Mobile Only) */}
+            <div className="flex items-center md:hidden shrink-0">
+              <div
+                className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg"
+                style={{ background: 'linear-gradient(135deg, hsl(267, 100%, 72%), hsl(220, 100%, 65%))' }}
+              >
+                <Sparkles className="w-5 h-5 text-white" />
+              </div>
             </div>
+
+            <form onSubmit={handleSearch} className="flex-1 relative group/search">
+              {/* Search Icon */}
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50 group-focus-within/search:text-primary transition-colors duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              </div>
+              <input
+                id="lobby-search"
+                type="search"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="搜尋角色..."
+                className={cn(
+                  'w-full pl-12 pr-12 py-3 rounded-full text-[15px] font-bold transition-all duration-300',
+                  'bg-white/[0.16] border border-white/30 text-white placeholder:text-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.4)] backdrop-blur-2xl',
+                  'group-hover/search:bg-white/[0.22] group-hover/search:border-white/40',
+                  'focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary focus:bg-white/[0.25] focus:shadow-[0_0_35px_rgba(168,85,247,0.25)]'
+                )}
+              />
+              <button
+                type="submit"
+                disabled={!searchInput.trim()}
+                className={cn(
+                  'absolute right-2 top-1/2 -translate-y-1/2 w-8.5 h-8.5 flex items-center justify-center rounded-full transition-all duration-300 active:scale-90',
+                  searchInput.trim() 
+                    ? 'bg-primary text-white shadow-[0_0_20px_rgba(139,92,246,0.6)] scale-100 opacity-100' 
+                    : 'bg-white/5 text-white/10 opacity-0 scale-75 pointer-events-none'
+                )}
+              >
+                <ArrowRight className="w-4.5 h-4.5" />
+              </button>
+            </form>
           </div>
 
-          {/* Search bar */}
-          <form onSubmit={handleSearch} className="flex-1 relative">
-            <input
-              id="lobby-search"
-              type="search"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="搜尋角色..."
-              className={cn(
-                'w-full pl-5 pr-12 py-3 rounded-full text-[15px] font-medium transition-all duration-300',
-                'bg-muted/60 border border-white/10 text-foreground placeholder:text-muted-foreground/40 shadow-inner backdrop-blur-3xl',
-                'focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 focus:bg-muted/80 focus:shadow-[0_0_20px_rgba(168,85,247,0.15)]'
-              )}
-            />
-            {/* Minimal Inline Submit Button (dynamic appearance based on input) */}
-            <button
-              type="submit"
-              disabled={!searchInput.trim()}
-              className={cn(
-                'absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-full transition-all duration-300 active:scale-90',
-                searchInput.trim() 
-                  ? 'bg-primary text-white hover:brightness-110 shadow-md shadow-primary/20' 
-                  : 'bg-primary/10 text-primary/50 hover:bg-primary/20'
-              )}
-            >
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </form>
+          {/* 標籤導航區塊 - 次要導覽風格 */}
+          {availableTags.length > 0 && (
+            <div className="flex-1 flex items-center overflow-x-auto hide-scrollbar">
+              <div className="flex items-center gap-2 pr-4 min-w-max">
+                {/* 垂直分割線 (僅電腦版) */}
+                <div className="hidden md:block w-px h-4 bg-white/10 mx-2" />
+                
+                {visibleTags.map((tag) => (
+                  <button
+                    key={tag}
+                    onClick={() => toggleTag(tag)}
+                    className={cn(
+                      'px-3.5 py-1.5 rounded-full text-[12px] font-semibold transition-all duration-200 border whitespace-nowrap active:scale-95',
+                      selectedTags.includes(tag)
+                        ? 'bg-primary/20 text-primary border-primary/40'
+                        : 'bg-transparent text-white/40 border-white/5 hover:text-white/80 hover:bg-white/5 hover:border-white/10'
+                    )}
+                  >
+                    {tag}
+                  </button>
+                ))}
+                
+                {availableTags.length > initialTagLimit && (
+                  <button
+                    onClick={() => setTagsExpanded(!tagsExpanded)}
+                    className="px-3 py-1.5 rounded-full text-[12px] font-bold text-white/30 hover:text-primary transition-all flex items-center gap-1 active:scale-95"
+                  >
+                    {tagsExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                    {tagsExpanded ? '收合' : '更多'}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
-
-        {/* Tags row */}
-        {availableTags.length > 0 && (
-          <div className="space-y-2">
-            <div className="flex flex-wrap gap-1.5">
-              {visibleTags.map((tag) => (
-                <button
-                  key={tag}
-                  onClick={() => toggleTag(tag)}
-                  className={cn(
-                    'px-3.5 py-1.5 rounded-full text-[13px] font-bold transition-all duration-300 border active:scale-95',
-                    selectedTags.includes(tag)
-                      ? 'bg-primary/10 text-primary border-primary/30 shadow-[0_0_12px_rgba(168,85,247,0.15)] ring-1 ring-primary/20'
-                      : 'bg-muted/40 text-muted-foreground border-border/30 shadow-sm hover:bg-muted/60 hover:text-foreground hover:border-border/60'
-                  )}
-                >
-                  {tag}
-                </button>
-              ))}
-              {availableTags.length > initialTagLimit && (
-                <button
-                  onClick={() => setTagsExpanded(!tagsExpanded)}
-                  className="px-3 py-1.5 rounded-full text-[13px] font-bold text-primary border border-primary/30 shadow-sm hover:bg-primary/10 transition-all flex items-center gap-1 active:scale-95"
-                >
-                  {tagsExpanded ? (
-                    <><ChevronUp className="w-3.5 h-3.5" />收合</>
-                  ) : (
-                    <><ChevronDown className="w-3.5 h-3.5" />更多</>
-                  )}
-                </button>
-              )}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* ── Content ── */}

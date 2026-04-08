@@ -286,7 +286,7 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
 
         {/* 免責聲明 */}
         <div className="flex justify-center mb-2 shrink-0">
-          <span className="text-[11px] text-white/30 font-bold bg-white/5 px-4 py-1.5 rounded-full border border-white/5 tracking-wider">
+          <span className="text-[11px] text-white/50 font-bold bg-zinc-900/40 px-4 py-1.5 rounded-full border border-white/10 tracking-wider backdrop-blur-sm">
             ⚡ 角色所說的話都由AI生成，請勿當真
           </span>
         </div>
@@ -296,8 +296,8 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
           onClick={() => setInfoMode('simple')}
           className={cn(
             "mx-auto mb-4 w-full max-w-lg p-4 rounded-2xl relative transition-all duration-200",
-            "bg-white/[0.04] border border-white/5 cursor-pointer active:scale-[0.98]",
-            "md:glass-md md:shadow-xl" // 僅在電腦版保留模糊效果
+            "bg-zinc-900/45 border border-white/15 cursor-pointer active:scale-[0.98]",
+            "glass-md shadow-xl" // 增加模糊與陰影
           )}
         >
           <div className="flex items-start gap-3">
@@ -602,8 +602,8 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
                     className={cn(
                       "px-4.5 py-3 rounded-2xl text-[15px] leading-relaxed transition-all duration-300 relative cursor-pointer select-text focus:outline-none shadow-sm",
                       isUser
-                        ? "bg-primary/30 border border-primary/35 text-white font-medium rounded-br-sm shadow-primary/5"
-                        : "bg-white/[0.12] border border-white/10 text-white/95 rounded-bl-sm"
+                        ? "bg-purple-600/85 border border-purple-400/30 text-white/90 font-semibold rounded-br-sm shadow-xl shadow-purple-500/20 backdrop-blur-md"
+                        : "bg-zinc-900/50 border border-white/10 text-zinc-100/90 rounded-bl-sm backdrop-blur-md"
                     )}
                   >
                     <span className="break-words inline-block">
@@ -622,7 +622,7 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
                   {isLast && !isEditing && !isTyping && (
                     <div className="flex items-center gap-1 mt-1 animate-in fade-in slide-in-from-top-1 duration-200">
                       {isUser ? (
-                        <div className="flex items-center gap-0.5 px-2 py-1 bg-white/[0.12] border border-white/10 rounded-full shadow-sm">
+                        <div className="flex items-center gap-0.5 px-2 py-1 bg-zinc-900/45 border border-white/15 rounded-full shadow-sm backdrop-blur-md">
                           <button
                             onClick={() => { navigator.clipboard.writeText(msg.content); }}
                             className="p-1.5 text-white/35 hover:text-white/90 transition-all"
@@ -640,7 +640,7 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
                           </button>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-0.5 px-2.5 py-1 bg-white/[0.12] border border-white/10 rounded-full shadow-sm">
+                        <div className="flex items-center gap-0.5 px-2.5 py-1 bg-zinc-900/45 border border-white/15 rounded-full shadow-sm backdrop-blur-md">
                           <button
                             onClick={() => { navigator.clipboard.writeText(msg.content); }}
                             className="p-1.5 text-white/35 hover:text-white/90 transition-all"
@@ -683,7 +683,7 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
 
         {isTyping && (!messages.length || messages[messages.length - 1].role === 'user') && (
           <div className="flex w-full justify-start items-end mb-5 animate-in fade-in duration-300">
-            <div className="px-4.5 py-3 rounded-2xl rounded-bl-sm bg-white/[0.12] border border-white/10 inline-flex items-center gap-1.5 shadow-sm h-[46px]">
+            <div className="px-4.5 py-3 rounded-2xl rounded-bl-sm bg-zinc-900/50 border border-white/10 inline-flex items-center gap-1.5 shadow-sm h-[46px] backdrop-blur-md">
               <span className="w-1.5 h-1.5 bg-white/70 rounded-full animate-bounce [animation-delay:-0.32s]" />
               <span className="w-1.5 h-1.5 bg-white/50 rounded-full animate-bounce [animation-delay:-0.16s]" />
               <span className="w-1.5 h-1.5 bg-white/30 rounded-full animate-bounce" />
@@ -791,23 +791,40 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
       {/* ── 懸浮底部輸入區 ── */}
       <div className="relative z-40 px-3 pb-2 sm:pb-4 pt-2 shrink-0 flex flex-col gap-2.5 pointer-events-none">
         {/* 建議區 */}
-        {suggestions.length > 0 && (
-          <div className="flex gap-1.5 overflow-x-auto p-1 pointer-events-auto hide-scrollbar snap-x">
-            {suggestions.map((s, idx) => (
-              <button
-                key={idx}
-                onClick={() => { setInput(s); setSuggestions([]); }}
-                className="snap-start shrink-0 h-8 px-3.5 rounded-full bg-black/50 backdrop-blur-3xl border border-white/10 text-[11px] font-semibold text-white/75 hover:text-white hover:bg-black/65 active:scale-95 transition-all duration-150"
-              >{s}</button>
-            ))}
-            <button
-              onClick={() => setSuggestions([])}
-              className="shrink-0 w-8 h-8 rounded-full bg-black/40 backdrop-blur-3xl border border-white/8 flex items-center justify-center text-white/25 hover:text-white/60 transition-colors duration-150"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
+        {/* 靈感建議面板 (Aligned List Style) */}
+        <div className="flex w-full justify-center pointer-events-auto">
+          <div className={cn(
+            "w-full max-w-4xl overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]",
+            suggestions.length > 0 ? "max-h-[380px] mb-2 opacity-100 translate-y-0" : "max-h-0 mb-0 opacity-0 translate-y-8"
+          )}>
+            <div className="mx-1.5 p-4 rounded-[28px] bg-zinc-900/80 border border-white/10 backdrop-blur-3xl shadow-2xl">
+              <div className="flex items-center justify-between mb-3 px-1.5">
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)]" />
+                  <span className="text-[10px] font-black text-white/35 uppercase tracking-[0.25em]">AI Inspiration</span>
+                </div>
+                <button 
+                  onClick={() => setSuggestions([])}
+                  className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-white/8 text-white/20 hover:text-white/50 transition-all"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <div className="flex flex-col gap-1.5 max-h-[280px] overflow-y-auto custom-scrollbar pr-1">
+                {suggestions.map((s, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => { setInput(s); setSuggestions([]); }}
+                    className="w-full text-left px-4 py-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.04] text-[13px] font-medium text-zinc-300 hover:text-white transition-all active:scale-[0.995] flex items-center gap-3 group"
+                  >
+                    <div className="w-1 h-3 rounded-full bg-yellow-500/20 group-hover:bg-yellow-500/60 transition-colors" />
+                    <span className="truncate">{s}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-        )}
+        </div>
 
         {/* 輸入膠囊 */}
         <div className="flex w-full justify-center pointer-events-auto">
@@ -820,7 +837,7 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
               onClick={handleSuggest} disabled={isSuggesting || !isActive}
               className={cn(
                 "w-9 h-9 shrink-0 flex items-center justify-center rounded-full transition-all duration-300 active:scale-95 mb-0.5",
-                isSuggesting ? "bg-white/5 text-primary animate-pulse" : "bg-transparent text-yellow-400/70 hover:text-yellow-400 hover:bg-white/5",
+                isSuggesting ? "bg-white/5 text-primary animate-pulse" : "bg-transparent text-yellow-400/40 hover:text-yellow-400 hover:bg-white/5",
                 !isActive && "opacity-50 grayscale cursor-not-allowed"
               )}
             >
