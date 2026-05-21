@@ -259,8 +259,8 @@ export default function CreatePage() {
 
   const inputClass = cn(
     'w-full px-4 py-3.5 rounded-xl text-[15px] font-medium transition-all duration-300',
-    'bg-muted/60 border border-white/10 shadow-inner text-foreground placeholder:text-muted-foreground/40',
-    'focus:outline-none focus:border-white/30 focus:bg-muted/80'
+    'bg-muted/60 border border-border shadow-inner text-foreground placeholder:text-muted-foreground/40',
+    'focus:outline-none focus:border-primary/40 focus:bg-muted/80'
   )
 
   // Required fields get stronger label color; optional fields stay muted
@@ -274,7 +274,7 @@ export default function CreatePage() {
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-[12px] bg-primary/15 flex items-center justify-center border border-primary/20 shadow-inner">
-              <Sparkles className="w-4.5 h-4.5 text-primary" />
+              <Sparkles className="w-4 h-4 text-primary" />
             </div>
             <div>
               <h1 className="text-xl font-black text-foreground leading-none tracking-tight">{id ? '編輯角色' : '創造角色'}</h1>
@@ -296,7 +296,7 @@ export default function CreatePage() {
         )}
 
         {/* ── Layout: single col on mobile, two col on desktop ── */}
-        <div className="grid grid-cols-1 md:grid-cols-[320px_1fr] gap-6 md:gap-8 items-start p-6 md:p-8 rounded-[32px] border border-white/5 bg-muted/20 backdrop-blur-sm shadow-[0_8px_40px_rgba(0,0,0,0.2)]">
+        <div className="grid grid-cols-1 md:grid-cols-[320px_1fr] gap-6 md:gap-8 items-start p-6 md:p-8 rounded-[32px] border border-border bg-muted/20 backdrop-blur-sm shadow-sm">
 
           {/* ── LEFT COLUMN: image + public toggle ── */}
           <div className="space-y-5">
@@ -313,7 +313,7 @@ export default function CreatePage() {
                     <img
                       src={avatarPreview}
                       alt="preview"
-                      className="w-full h-full object-cover rounded-[32px] border border-white/10"
+                      className="w-full h-full object-cover rounded-[32px] border border-border"
                     />
                     {/* 點擊更換的遮罩提示：取中間平衡點（手機常駐，桌機懸停） */}
                     <div className="absolute inset-0 bg-black/20 lg:bg-black/0 lg:group-hover:bg-black/40 transition-all duration-300 flex flex-col items-center justify-center">
@@ -340,7 +340,7 @@ export default function CreatePage() {
                     'flex flex-col items-center justify-center gap-3 relative overflow-hidden',
                     isDragging
                       ? 'border-primary bg-primary/20 scale-[1.02] shadow-[0_0_40px_rgba(168,85,247,0.2)]'
-                      : 'border-white/10 bg-muted/20 backdrop-blur-sm hover:border-primary/40 hover:bg-primary/5 hover:shadow-2xl'
+                      : 'border-border bg-muted/20 backdrop-blur-sm hover:border-primary/40 hover:bg-primary/5 hover:shadow-2xl'
                   )}
                 >
                   <div className={cn(
@@ -378,15 +378,15 @@ export default function CreatePage() {
                   type="button"
                   onClick={() => set('is_public', !form.is_public)}
                   className={cn(
-                    "relative w-12 h-6.5 rounded-full transition-all duration-300 shrink-0 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-2 focus:ring-offset-background",
-                    form.is_public ? 'bg-primary' : 'bg-muted-foreground/25'
+                    "relative w-11 h-6 rounded-full transition-all duration-300 shrink-0 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-2 focus:ring-offset-background",
+                    form.is_public ? 'bg-primary' : 'bg-zinc-300 dark:bg-zinc-700'
                   )}
                   aria-label="切換公開狀態"
                 >
                   <span
                     className={cn(
-                      "absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-300",
-                      form.is_public ? 'translate-x-[22px]' : 'translate-x-0'
+                      "absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow-md transition-transform duration-300",
+                      form.is_public ? 'translate-x-5 scale-110' : 'translate-x-0'
                     )}
                   />
                 </button>
@@ -422,9 +422,9 @@ export default function CreatePage() {
                   <span className="ml-1.5 text-[10px] normal-case tracking-normal font-normal text-muted-foreground/40">逗號或空格分隔</span>
                 </label>
                 <div className={cn(
-                  'w-full min-h-[52px] px-3 py-[9px] rounded-xl border border-white/10 bg-muted/60 shadow-inner',
+                 'w-full min-h-[52px] px-3 py-[9px] rounded-xl border border-border bg-muted/60 shadow-inner',
                   'flex flex-wrap gap-1.5 items-center',
-                  'focus-within:border-white/30 focus-within:bg-muted/80 transition-all duration-300'
+                  'focus-within:border-primary/40 focus-within:bg-muted/80 transition-all duration-300'
                 )}>
                   {form.tags.map((tag) => (
                     <span
@@ -486,7 +486,7 @@ export default function CreatePage() {
 
             {/* Row 3: Prompt (full width) — Card-like redesign (neutral) */}
             <div className="relative group">
-              <div className="relative rounded-[24px] border border-white/10 bg-black/40 p-6 space-y-4 shadow-2xl backdrop-blur-md transition-all duration-300 group-focus-within:border-white/20">
+              <div className="relative rounded-[24px] border border-border bg-muted/30 p-6 space-y-4 shadow-sm backdrop-blur-md transition-all duration-300 group-focus-within:border-primary/30">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <label className={cn(labelRequiredClass, 'mb-0')}>
@@ -502,7 +502,7 @@ export default function CreatePage() {
                       "flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold tabular-nums transition-all duration-300",
                       form.prompt.length > 2000
                         ? "bg-primary/20 text-primary border border-primary/30"
-                        : "bg-white/5 text-muted-foreground/60 border border-white/5"
+                        : "bg-muted text-muted-foreground border border-border"
                     )}>
                       <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
                       {form.prompt.length.toLocaleString()} / 20,000
@@ -517,8 +517,8 @@ export default function CreatePage() {
                   rows={12}
                   className={cn(
                     'w-full px-4 py-4 rounded-xl text-[15px] font-medium leading-relaxed transition-all duration-300',
-                    'bg-white/[0.03] border border-white/5 text-foreground placeholder:text-muted-foreground/30 resize-y min-h-[300px]',
-                    'focus:outline-none focus:border-white/20 focus:bg-white/[0.05]'
+                    'bg-muted/60 border border-border text-foreground placeholder:text-muted-foreground/30 resize-y min-h-[300px]',
+                    'focus:outline-none focus:border-primary/40 focus:bg-muted/80'
                   )}
                 />
                 <div className="pt-2 flex items-center justify-between opacity-0 group-focus-within:opacity-100 transition-opacity duration-300">
@@ -552,9 +552,9 @@ export default function CreatePage() {
                     disabled={isPending || !form.name.trim() || !form.prompt.trim()}
                     className={cn(
                       'flex-[2] flex items-center justify-center gap-2 py-4 rounded-full font-black text-sm transition-all duration-300',
-                      'bg-primary text-white shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:shadow-[0_0_30px_rgba(79,70,229,0.5)] hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:scale-100'
+                      'bg-primary text-white shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:shadow-[0_0_30px_rgba(79,70,229,0.5)] hover:scale-[1.02] active:scale-[0.98] disabled:bg-muted disabled:text-muted-foreground/50 disabled:border disabled:border-border disabled:shadow-none disabled:cursor-not-allowed'
                     )}
-                    style={{ background: 'linear-gradient(135deg, hsl(267, 46%, 35%), hsl(244, 52%, 31%))' }}
+                    style={(!isPending && form.name.trim() && form.prompt.trim()) ? { background: 'linear-gradient(135deg, hsl(267, 46%, 35%), hsl(244, 52%, 31%))' } : undefined}
                   >
                     {isPending ? (
                       <><Loader2 className="w-4 h-4 animate-spin" />儲存中...</>
@@ -579,7 +579,7 @@ export default function CreatePage() {
                     id="create-draft"
                     onClick={() => modal.alert('已成功暫存草稿 (模擬)', { title: '草稿儲存' })}
                     type="button"
-                    className="flex-1 px-4 py-3 rounded-full text-sm font-semibold text-foreground/70 bg-muted/60 border border-white/10 hover:bg-muted/80 hover:text-foreground transition-all duration-200 active:scale-[0.98]"
+                    className="flex-1 px-4 py-3 rounded-full text-sm font-semibold text-foreground/70 bg-muted/60 border border-border hover:bg-muted/80 hover:text-foreground transition-all duration-200 active:scale-[0.98]"
                   >
                     暫存草稿
                   </button>
@@ -591,10 +591,10 @@ export default function CreatePage() {
                     className={cn(
                       'flex-[2] flex items-center justify-center gap-2 py-3 rounded-full text-sm font-bold text-white transition-all duration-300',
                       'shadow-[0_0_20px_rgba(79,70,229,0.3)] active:scale-[0.98]',
-                      'disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none',
+                      'disabled:bg-muted disabled:text-muted-foreground/50 disabled:border disabled:border-border disabled:shadow-none disabled:cursor-not-allowed',
                       !isPending && form.name.trim() && form.prompt.trim() && 'hover:brightness-110 hover:shadow-[0_0_30px_rgba(79,70,229,0.5)]'
                     )}
-                    style={{ background: 'linear-gradient(135deg, hsl(267, 46%, 35%), hsl(244, 52%, 31%))' }}
+                    style={(!isPending && form.name.trim() && form.prompt.trim()) ? { background: 'linear-gradient(135deg, hsl(267, 46%, 35%), hsl(244, 52%, 31%))' } : undefined}
                   >
                     {isPending ? (
                       <><Loader2 className="w-4 h-4 animate-spin" />建立中...</>

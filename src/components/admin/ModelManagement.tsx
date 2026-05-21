@@ -88,7 +88,7 @@ export function ModelManagement({
         </div>
 
         {/* Advanced Filter Row */}
-        <div className="flex flex-col lg:flex-row lg:items-center gap-3 p-4 rounded-[28px] bg-white/[0.05] border border-white/8 relative">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-3 p-4 rounded-[28px] bg-muted/50 border border-border relative">
           {/* Search */}
           <div className="flex-1 relative">
             <input 
@@ -96,10 +96,10 @@ export function ModelManagement({
               placeholder="搜尋模型名稱或 ID..."
               value={modelSearch}
               onChange={(e) => setModelSearch(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-primary/50 transition-all placeholder:text-white/10"
+              className="w-full bg-muted border border-border rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-primary/50 transition-all placeholder:text-muted-foreground/40 text-foreground"
             />
             {modelSearch && (
-              <button onClick={() => setModelSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/20 hover:text-white transition-colors">
+              <button onClick={() => setModelSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
@@ -108,21 +108,21 @@ export function ModelManagement({
           <div className="flex flex-wrap items-center gap-3">
             {/* Provider Filter */}
             <div className="flex items-center gap-2 flex-1 sm:flex-none">
-              <span className="text-[10px] font-bold text-white/30 uppercase tracking-wider whitespace-nowrap hidden sm:inline">供應商:</span>
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider whitespace-nowrap hidden sm:inline">供應商:</span>
               <div className="relative flex-1 sm:flex-none">
                 <button
                   onClick={() => setShowProviderFilterDropdown(!showProviderFilterDropdown)}
                   onBlur={() => setTimeout(() => setShowProviderFilterDropdown(false), 200)}
-                  className="w-full sm:min-w-[120px] bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white flex items-center justify-between hover:border-white/20 transition-all"
+                  className="w-full sm:min-w-[120px] bg-muted border border-border rounded-xl px-4 py-2 text-sm text-foreground flex items-center justify-between hover:border-primary/40 transition-all"
                 >
                   <span className="capitalize">{providerFilter === 'all' ? '全部供應商' : providerFilter}</span>
-                  <ChevronDown className={cn("w-3.5 h-3.5 text-white/20 transition-transform ml-2", showProviderFilterDropdown && "rotate-180")} />
+                  <ChevronDown className={cn("w-3.5 h-3.5 text-muted-foreground transition-transform ml-2", showProviderFilterDropdown && "rotate-180")} />
                 </button>
                 
                 {showProviderFilterDropdown && (
-                  <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-[#111318] border border-white/10 rounded-2xl shadow-2xl py-2 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-card border border-border rounded-2xl shadow-2xl py-2 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                     <button
-                      className="w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition-colors flex items-center justify-between"
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-muted transition-colors flex items-center justify-between"
                       onClick={() => { setProviderFilter('all'); setShowProviderFilterDropdown(false); }}
                     >
                       <span>全部</span>
@@ -131,7 +131,7 @@ export function ModelManagement({
                     {providers.map(p => (
                       <button
                         key={p}
-                        className="w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition-colors flex items-center justify-between"
+                        className="w-full text-left px-4 py-2 text-sm hover:bg-muted transition-colors flex items-center justify-between"
                         onClick={() => { setProviderFilter(p); setShowProviderFilterDropdown(false); }}
                       >
                         <span className="capitalize">{p}</span>
@@ -145,21 +145,21 @@ export function ModelManagement({
 
             {/* Category Filter */}
             <div className="flex items-center gap-2 flex-1 sm:flex-none">
-              <span className="text-[10px] font-bold text-white/30 uppercase tracking-wider whitespace-nowrap hidden sm:inline">分類:</span>
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider whitespace-nowrap hidden sm:inline">分類:</span>
               <div className="relative flex-1 sm:flex-none">
                 <button
                   onClick={() => setShowCategoryFilterDropdown(!showCategoryFilterDropdown)}
                   onBlur={() => setTimeout(() => setShowCategoryFilterDropdown(false), 200)}
-                  className="w-full sm:min-w-[120px] bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white flex items-center justify-between hover:border-white/20 transition-all"
+                  className="w-full sm:min-w-[120px] bg-muted border border-border rounded-xl px-4 py-2 text-sm text-foreground flex items-center justify-between hover:border-primary/40 transition-all"
                 >
                   <span>{categoryFilter === 'all' ? '全部分類' : categoryFilter}</span>
-                  <ChevronDown className={cn("w-3.5 h-3.5 text-white/20 transition-transform ml-2", showCategoryFilterDropdown && "rotate-180")} />
+                  <ChevronDown className={cn("w-3.5 h-3.5 text-muted-foreground transition-transform ml-2", showCategoryFilterDropdown && "rotate-180")} />
                 </button>
                 
                 {showCategoryFilterDropdown && (
-                  <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-[#111318] border border-white/10 rounded-2xl shadow-2xl py-2 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-card border border-border rounded-2xl shadow-2xl py-2 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                     <button
-                      className="w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition-colors flex items-center justify-between"
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-muted transition-colors flex items-center justify-between"
                       onClick={() => { setCategoryFilter('all'); setShowCategoryFilterDropdown(false); }}
                     >
                       <span>全部</span>
@@ -168,7 +168,7 @@ export function ModelManagement({
                     {categories.map(c => (
                       <button
                         key={c}
-                        className="w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition-colors flex items-center justify-between"
+                        className="w-full text-left px-4 py-2 text-sm hover:bg-muted transition-colors flex items-center justify-between"
                         onClick={() => { setCategoryFilter(c); setShowCategoryFilterDropdown(false); }}
                       >
                         <span>{c}</span>
@@ -188,12 +188,12 @@ export function ModelManagement({
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-white/8 bg-white/[0.05]">
-                <th className="p-5 text-xs font-black text-white/50 uppercase tracking-widest">Provider / Name</th>
-                <th className="p-5 text-xs font-black text-white/50 uppercase tracking-widest">Model ID</th>
-                <th className="p-5 text-xs font-black text-white/50 uppercase tracking-widest">Categories</th>
-                <th className="p-5 text-center text-xs font-black text-white/50 uppercase tracking-widest">Status</th>
-                <th className="p-5 text-right text-xs font-black text-white/50 uppercase tracking-widest">Options</th>
+              <tr className="border-b border-border bg-muted/30">
+                <th className="p-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Provider / Name</th>
+                <th className="p-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Model ID</th>
+                <th className="p-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Categories</th>
+                <th className="p-5 text-center text-xs font-black text-muted-foreground uppercase tracking-widest">Status</th>
+                <th className="p-5 text-right text-xs font-black text-muted-foreground uppercase tracking-widest">Options</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">
@@ -274,7 +274,7 @@ export function ModelManagement({
         {/* Mobile View */}
         <div className="grid grid-cols-1 gap-4 md:hidden">
           {filteredModels.map(m => (
-            <div key={m.id} className="glass-md p-5 rounded-[28px] border border-white/5 space-y-4">
+            <div key={m.id} className="glass-md p-5 rounded-[28px] border border-border space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   {m.icon_url ? (
@@ -286,7 +286,7 @@ export function ModelManagement({
                   )}
                   <div className="min-w-0">
                     <p className="font-bold text-[15px] truncate">{m.name}</p>
-                    <span className="text-[10px] text-white/30 uppercase tracking-widest font-mono truncate block">{m.provider}</span>
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-mono truncate block">{m.provider}</span>
                   </div>
                 </div>
                 <button
@@ -304,7 +304,7 @@ export function ModelManagement({
               </div>
 
               <div className="space-y-3">
-                <div className="flex flex-wrap gap-1.5 p-3 rounded-2xl bg-white/[0.03] border border-white/5">
+                <div className="flex flex-wrap gap-1.5 p-3 rounded-2xl bg-muted/50 border border-border">
                    <span className="px-2 py-0.5 rounded-lg bg-primary/10 text-primary text-[10px] uppercase font-black border border-primary/20">
                       {m.category}
                     </span>
@@ -314,16 +314,16 @@ export function ModelManagement({
                       </span>
                     ))}
                 </div>
-                <p className="text-[10px] text-white/20 font-mono pl-1 uppercase tracking-tighter truncate">ID: {m.model_id}</p>
+                <p className="text-[10px] text-muted-foreground font-mono pl-1 uppercase tracking-tighter truncate">ID: {m.model_id}</p>
               </div>
 
-              <div className="flex gap-2 pt-2 border-t border-white/5">
+              <div className="flex gap-2 pt-2 border-t border-border">
                 <button
                   onClick={() => {
                     setEditForm({ ...m, tags: m.tags || [] })
                     setIsEditingModel(m.id)
                   }}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white/5 font-bold text-sm text-white/80 hover:bg-white/10"
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-muted font-bold text-sm text-foreground hover:bg-muted/80 border border-border transition-colors"
                 >
                   <Edit className="w-4 h-4" /> 編輯
                 </button>

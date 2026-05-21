@@ -53,7 +53,7 @@ export function ModalProvider() {
             <ModalTitle className="text-xl font-bold tracking-tight">
               {options.title || (type === 'confirm' ? '請確認' : '提醒')}
             </ModalTitle>
-            <ModalDescription className="text-white/60 font-medium">
+            <ModalDescription className="text-muted-foreground font-medium">
               {options.message}
             </ModalDescription>
           </div>
@@ -63,7 +63,7 @@ export function ModalProvider() {
           {type === 'confirm' && (
             <button
               onClick={handleCancel}
-              className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 hover:bg-white/5 text-sm font-semibold transition-all active:scale-95"
+              className="flex-1 px-4 py-2.5 rounded-xl border border-border hover:bg-muted text-sm font-semibold transition-all active:scale-95"
             >
               {options.cancelText || '取消'}
             </button>

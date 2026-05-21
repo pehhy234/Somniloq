@@ -119,14 +119,14 @@ export default function ProfilePage() {
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[400px] bg-primary/5 blur-[120px] rounded-full -z-10" />
 
       {/* Hero Profile Section */}
-      <section className="relative glass rounded-[40px] p-8 md:p-12 border border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] overflow-hidden">
+      <section className="relative glass rounded-[40px] p-8 md:p-12 border border-border shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] overflow-hidden">
         <div className="absolute top-0 right-0 p-8">
            {profile?.is_admin ? (
              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/20 border border-primary/30 text-primary text-[10px] font-black uppercase tracking-widest">
                <ShieldCheck className="w-3 h-3" /> System Admin
              </div>
            ) : (
-             <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-muted-foreground text-[10px] font-black uppercase tracking-widest">
+             <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted border border-border text-muted-foreground text-[10px] font-black uppercase tracking-widest">
                <Shield className="w-3 h-3" /> Member
              </div>
            )}
@@ -161,9 +161,9 @@ export default function ProfilePage() {
             {!isEditing && (
               <button 
                 onClick={() => setIsEditing(true)}
-                className="absolute -bottom-2 -right-2 w-11 h-11 rounded-3xl bg-background border border-white/10 flex items-center justify-center shadow-2xl hover:bg-primary hover:text-white transition-all duration-300 hover:rotate-12"
+                className="absolute -bottom-2 -right-2 w-11 h-11 rounded-3xl bg-background border border-border flex items-center justify-center shadow-2xl hover:bg-primary hover:text-white transition-all duration-300 hover:rotate-12"
               >
-                <Edit2 className="w-4.5 h-4.5" />
+                <Edit2 className="w-4 h-4" />
               </button>
             )}
             <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
@@ -177,19 +177,19 @@ export default function ProfilePage() {
                   type="text"
                   value={editingName}
                   onChange={(e) => setEditingName(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-[20px] px-6 py-4 text-center text-xl font-black text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+                  className="w-full bg-muted border border-border rounded-[20px] px-6 py-4 text-center text-xl font-black text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
                   placeholder="顯示名稱"
                   autoFocus
                 />
                 <div className="flex gap-3">
-                  <button onClick={() => setIsEditing(false)} className="flex-1 px-6 py-3.5 rounded-[20px] bg-white/5 text-sm font-bold text-muted-foreground hover:bg-white/10 transition-all">
+                  <button onClick={() => setIsEditing(false)} className="flex-1 px-6 py-3.5 rounded-[20px] bg-muted text-sm font-bold text-muted-foreground hover:bg-muted/80 transition-all">
                     取消
                   </button>
                   <button 
                     onClick={handleSave} 
                     disabled={isSaving || !editingName.trim()}
-                    className="flex-[2] px-6 py-3.5 rounded-full text-sm font-black text-white shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:brightness-110 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
-                    style={{ background: 'linear-gradient(135deg, hsl(267, 46%, 35%), hsl(244, 52%, 31%))' }}
+                    className="flex-[2] px-6 py-3.5 rounded-full text-sm font-black text-white shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:brightness-110 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 disabled:bg-muted disabled:text-muted-foreground/50 disabled:border disabled:border-border disabled:shadow-none disabled:cursor-not-allowed"
+                    style={(!isSaving && editingName.trim()) ? { background: 'linear-gradient(135deg, hsl(267, 46%, 35%), hsl(244, 52%, 31%))' } : undefined}
                   >
                     {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4" /> 儲存變更</>}
                   </button>
@@ -210,12 +210,12 @@ export default function ProfilePage() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-4 mt-10 max-w-md mx-auto">
-          <div className="glass-light rounded-[24px] p-4 text-center border border-white/5">
+          <div className="glass-light rounded-[24px] p-4 text-center border border-border">
             <div className="flex justify-center mb-1"><Sparkles className="w-4 h-4 text-primary opacity-60" /></div>
             <p className="text-2xl font-black text-foreground leading-none">{stats?.characters || 0}</p>
             <p className="text-[10px] text-muted-foreground/60 uppercase font-black tracking-widest mt-1.5">角色創作</p>
           </div>
-          <div className="glass-light rounded-[24px] p-4 text-center border border-white/5">
+          <div className="glass-light rounded-[24px] p-4 text-center border border-border">
             <div className="flex justify-center mb-1"><MessageSquare className="w-4 h-4 text-primary opacity-60" /></div>
             <p className="text-2xl font-black text-foreground leading-none">{stats?.chats || 0}</p>
             <p className="text-[10px] text-muted-foreground/60 uppercase font-black tracking-widest mt-1.5">對話累積</p>
@@ -225,14 +225,14 @@ export default function ProfilePage() {
 
       {/* Settings Sections Grouped */}
       <section className="space-y-4">
-        <div className="glass rounded-[32px] overflow-hidden border border-white/5">
-          <div className="px-8 py-5 border-b border-white/5 bg-white/5 flex items-center gap-3">
+        <div className="glass rounded-[32px] overflow-hidden border border-border">
+          <div className="px-8 py-5 border-b border-border bg-muted/50 flex items-center gap-3">
             <Settings className="w-4 h-4 text-muted-foreground" />
             <h3 className="text-[11px] font-black text-muted-foreground uppercase tracking-[0.2em]">系統與偏好</h3>
           </div>
           <div className="p-4 space-y-1">
             {/* Dark Mode */}
-            <div className="flex items-center justify-between px-4 py-4 rounded-[20px] hover:bg-white/5 transition-all group cursor-pointer" onClick={toggleDarkMode}>
+            <div className="flex items-center justify-between px-4 py-4 rounded-[20px] hover:bg-muted transition-all group cursor-pointer" onClick={toggleDarkMode}>
               <div className="flex items-center gap-4">
                 <div className={cn(
                   "w-12 h-12 rounded-[18px] flex items-center justify-center transition-all duration-500",
@@ -246,20 +246,20 @@ export default function ProfilePage() {
                 </div>
               </div>
               <div className={cn(
-                "relative w-14 h-7.5 rounded-full transition-all duration-300",
-                darkMode ? "bg-primary shadow-[0_0_20px_rgba(168,85,247,0.4)]" : "bg-muted-foreground/20"
+                "relative w-11 h-6 rounded-full transition-all duration-300 shrink-0",
+                darkMode ? "bg-primary shadow-[0_0_20px_rgba(168,85,247,0.4)]" : "bg-zinc-300 dark:bg-zinc-700"
               )}>
                 <span className={cn(
-                  "absolute top-1.5 left-1.5 w-4.5 h-4.5 rounded-full bg-white shadow-xl transition-all duration-500",
-                  darkMode ? "translate-x-6.5 scale-110" : "translate-x-0"
+                  "absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow-md transition-all duration-300",
+                  darkMode ? "translate-x-5 scale-110" : "translate-x-0"
                 )} />
               </div>
             </div>
 
             {/* Language (Mock) */}
-            <div className="flex items-center justify-between px-4 py-4 rounded-[20px] hover:bg-white/5 transition-all group opacity-50 grayscale pointer-events-none">
+            <div className="flex items-center justify-between px-4 py-4 rounded-[20px] hover:bg-muted transition-all group opacity-50 grayscale pointer-events-none">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-[18px] bg-white/5 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-[18px] bg-muted flex items-center justify-center">
                   <Globe className="w-6 h-6 text-muted-foreground" />
                 </div>
                 <div>
@@ -267,7 +267,7 @@ export default function ProfilePage() {
                   <p className="text-[10px] text-muted-foreground/50 font-medium">繁體中文 (全球版)</p>
                 </div>
               </div>
-              <span className="text-[10px] font-black uppercase text-muted-foreground/30 px-3 py-1 bg-white/5 rounded-full">Coming Soon</span>
+              <span className="text-[10px] font-black uppercase text-muted-foreground/30 px-3 py-1 bg-muted rounded-full">Coming Soon</span>
             </div>
           </div>
         </div>

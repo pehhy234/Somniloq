@@ -89,9 +89,9 @@ export function CharacterCard({ character, variant = 'horizontal', onClick }: Ch
       {/* Info (2/3 width) - Centered vertically with padding */}
       <div className="flex-1 min-w-0 flex flex-col justify-center px-4 py-2">
         {/* Name */}
-        <h3 className="font-bold text-white text-[15px] leading-snug drop-shadow-sm mb-1">{name}</h3>
+        <h3 className="font-bold text-foreground text-[15px] leading-snug drop-shadow-sm mb-1">{name}</h3>
         {/* Description */}
-        <p className="text-[12px] text-white/40 leading-relaxed flex-1 line-clamp-2 font-medium">
+        <p className="text-[12px] text-muted-foreground leading-relaxed flex-1 line-clamp-2 font-medium">
           {description || '暫無介紹'}
         </p>
         {/* Author */}

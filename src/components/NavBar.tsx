@@ -53,7 +53,7 @@ export function MobileNav() {
               className={({ isActive }) =>
                 cn(
                   'flex flex-col items-center gap-0.5 py-2 px-3.5 rounded-2xl transition-all duration-300 relative z-10',
-                  isActive ? 'text-primary bg-primary/10 border border-primary/20 shadow-lg' : 'text-white/40 hover:text-white/70'
+                  isActive ? 'text-primary bg-primary/10 border border-primary/20 shadow-lg' : 'text-muted-foreground hover:text-foreground'
                 )
               }
             >
@@ -83,7 +83,7 @@ export function DesktopNav() {
   if (location.pathname.startsWith('/room')) return null
 
   return (
-    <nav className="hidden lg:flex flex-col fixed left-0 top-0 bottom-0 z-50 w-[80px] hover:w-[240px] bg-black/80 backdrop-blur-3xl border-r border-white/5 transition-all duration-500 ease-[cubic-bezier(0.2,1,0.2,1)] overflow-hidden group shadow-2xl">
+    <nav className="hidden lg:flex flex-col fixed left-0 top-0 bottom-0 z-50 w-[80px] hover:w-[240px] bg-background/90 backdrop-blur-3xl border-r border-border transition-all duration-500 ease-[cubic-bezier(0.2,1,0.2,1)] overflow-hidden group shadow-2xl">
       {/* Logo */}
       <div className="flex items-center gap-4 px-5 py-8 mb-4">
         <div
@@ -92,7 +92,7 @@ export function DesktopNav() {
         >
           <Sparkles className="w-5 h-5 text-white" />
         </div>
-        <span className="text-lg font-bold text-white tracking-tight whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
+        <span className="text-lg font-bold text-foreground tracking-tight whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
           Somniloq
         </span>
       </div>
@@ -112,7 +112,7 @@ export function DesktopNav() {
                   'flex items-center gap-4 px-4 py-4 rounded-2xl transition-all duration-300 min-w-0 mx-2',
                   isActive
                     ? 'glass-sm text-primary shadow-lg border border-primary/20'
-                    : 'text-white/50 hover:bg-white/5 hover:text-white'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 )
               }
             >

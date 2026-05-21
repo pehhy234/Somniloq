@@ -70,7 +70,7 @@ export default function AdminPage() {
 
   return (
     <div className="max-w-6xl mx-auto py-10 px-6 h-full">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-6 border-b border-white/5">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-6 border-b border-border">
         <div className="flex items-center gap-4">
           <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20 shadow-inner">
             <Shield className="w-8 h-8 text-primary" />
@@ -82,12 +82,12 @@ export default function AdminPage() {
         </div>
         
         {/* Tabs */}
-        <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5 shadow-inner">
+        <div className="flex bg-muted p-1 rounded-2xl border border-border shadow-inner">
           <button
             onClick={() => setActiveTab('users')}
             className={cn(
               "flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-all",
-              activeTab === 'users' ? "bg-white/10 text-white shadow-lg border border-white/10" : "text-white/40 hover:text-white/80"
+              activeTab === 'users' ? "bg-card text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
             )}
           >
             <Users className="w-4 h-4" />
@@ -97,7 +97,7 @@ export default function AdminPage() {
             onClick={() => setActiveTab('models')}
             className={cn(
               "flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-all",
-              activeTab === 'models' ? "bg-white/10 text-white shadow-lg border border-white/10" : "text-white/40 hover:text-white/80"
+              activeTab === 'models' ? "bg-card text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
             )}
           >
             <Database className="w-4 h-4" />
@@ -107,7 +107,7 @@ export default function AdminPage() {
             onClick={() => setActiveTab('settings')}
             className={cn(
               "flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-all",
-              activeTab === 'settings' ? "bg-white/10 text-white shadow-lg border border-white/10" : "text-white/40 hover:text-white/80"
+              activeTab === 'settings' ? "bg-card text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
             )}
           >
             <Settings className="w-4 h-4" />

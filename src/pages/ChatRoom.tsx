@@ -843,7 +843,7 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
                 !isActive && "opacity-50 grayscale cursor-not-allowed"
               )}
             >
-              {isSuggesting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lightbulb className="w-4.5 h-4.5" />}
+              {isSuggesting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lightbulb className="w-4 h-4" />}
             </button>
 
             {/* 中間：文字輸入 (動態行數) */}

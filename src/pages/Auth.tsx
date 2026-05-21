@@ -100,7 +100,7 @@ export default function AuthPage() {
         </div>
 
         {/* Card */}
-        <div className="glass-dark bg-black/40 backdrop-blur-3xl rounded-[32px] p-8 md:p-10 shadow-[0_24px_64px_rgba(0,0,0,0.6)] border border-white/10 relative overflow-hidden">
+        <div className="bg-card/80 backdrop-blur-3xl rounded-[32px] p-8 md:p-10 shadow-[0_24px_64px_rgba(0,0,0,0.15)] border border-border relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
           {/* Mode tabs */}
           <div className="flex gap-1 mb-6 bg-muted rounded-lg p-1">
@@ -147,7 +147,7 @@ export default function AuthPage() {
                   placeholder="你的暱稱"
                   className={cn(
                     'w-full px-4 py-3 rounded-xl text-sm transition-all duration-300',
-                    'bg-muted/60 border border-white/10 text-foreground placeholder:text-muted-foreground/40 shadow-inner',
+                    'bg-muted/60 border border-border text-foreground placeholder:text-muted-foreground/40 shadow-inner',
                     'focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 focus:bg-muted/80'
                   )}
                 />

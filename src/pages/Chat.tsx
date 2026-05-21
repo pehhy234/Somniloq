@@ -98,8 +98,8 @@ export default function ChatPage() {
               className={cn(
                 "flex-1 flex items-center justify-center gap-2 py-2.5 text-[14px] font-bold rounded-xl transition-all duration-300",
                 activeTab === 'chat' 
-                  ? "bg-white/10 text-white shadow-lg ring-1 ring-white/10" 
-                  : "text-white/40 hover:text-white"
+                  ? "bg-muted text-foreground shadow-sm ring-1 ring-border" 
+                  : "text-muted-foreground hover:text-foreground"
               )}
             >
               我的對話
@@ -109,8 +109,8 @@ export default function ChatPage() {
               className={cn(
                 "flex-1 flex items-center justify-center gap-2 py-2.5 text-[14px] font-bold rounded-xl transition-all duration-300",
                 activeTab === 'character' 
-                  ? "bg-white/10 text-white shadow-lg ring-1 ring-white/10" 
-                  : "text-white/40 hover:text-white"
+                  ? "bg-muted text-foreground shadow-sm ring-1 ring-border" 
+                  : "text-muted-foreground hover:text-foreground"
               )}
             >
               我的角色
@@ -159,29 +159,29 @@ export default function ChatPage() {
                       navigate(isMobile ? `/room/${conv.id}` : `/chat/${conv.id}`)
                     }}
                     className={cn(
-                      "w-full flex items-center gap-4 p-4 transition-all duration-300 text-left relative z-10 cursor-pointer overflow-hidden rounded-3xl glass-md border border-white/5",
+                      "w-full flex items-center gap-4 p-4 transition-all duration-300 text-left relative z-10 cursor-pointer overflow-hidden rounded-3xl border border-border/50",
                       swipedId === conv.id ? "-translate-x-20" : "translate-x-0",
                       conv.id === conversationId 
-                        ? "bg-primary/10 border-primary/20" 
-                        : "hover:bg-white/[0.08] active:scale-[0.98]"
+                        ? "bg-muted border-primary/20" 
+                        : "hover:bg-muted/60 active:scale-[0.98]"
                     )}
                   >
                     <div className="relative shrink-0">
                       <img
                         src={conv.character.avatar_url || 'https://via.placeholder.com/150'}
-                        className="w-[56px] h-[56px] rounded-2xl object-cover border border-white/10 shadow-lg bg-muted group-hover:scale-105 transition-transform duration-500"
+                        className="w-[56px] h-[56px] rounded-2xl object-cover border border-border shadow-sm bg-muted group-hover:scale-105 transition-transform duration-500"
                       />
                     </div>
                     <div className="flex-1 min-w-0 pr-8">
                       <div className="flex items-center justify-between mb-1">
-                        <h3 className="font-bold text-[16px] text-white truncate drop-shadow-sm">
+                        <h3 className="font-bold text-[16px] text-foreground truncate drop-shadow-sm">
                           {conv.character.name}
                         </h3>
-                        <span className="text-[12px] text-white/40 font-medium">
+                        <span className="text-[12px] text-muted-foreground font-medium">
                           {formatDate(conv.updated_at)}
                         </span>
                       </div>
-                      <p className="text-[14px] text-white/60 truncate leading-snug font-medium">
+                      <p className="text-[14px] text-muted-foreground truncate leading-snug font-medium">
                         {conv.last_message?.content || conv.character.description || '點擊開始對話'}
                       </p>
                     </div>
@@ -222,20 +222,20 @@ export default function ChatPage() {
                       logger.error('Chat start error:', e)
                     }
                   }}
-                  className="w-full flex items-center gap-4 p-4 mb-3 rounded-3xl glass-md border border-white/5 hover:bg-white/[0.08] active:scale-[0.98] transition-all text-left shadow-lg group"
+                  className="w-full flex items-center gap-4 p-4 mb-3 rounded-3xl border border-border hover:bg-muted/60 active:scale-[0.98] transition-all text-left shadow-sm group"
                 >
                   <div className="shrink-0 relative">
                     <img
                       src={char.avatar_url || 'https://via.placeholder.com/150'}
-                      className="w-[56px] h-[56px] rounded-2xl object-cover border border-white/10 shadow-lg bg-muted group-hover:scale-105 transition-transform duration-500"
+                      className="w-[56px] h-[56px] rounded-2xl object-cover border border-border shadow-sm bg-muted group-hover:scale-105 transition-transform duration-500"
                     />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
-                      <h3 className="font-bold text-[16px] text-white truncate drop-shadow-sm">{char.name}</h3>
-                      <ChevronRight className="w-5 h-5 text-white/30" />
+                      <h3 className="font-bold text-[16px] text-foreground truncate drop-shadow-sm">{char.name}</h3>
+                      <ChevronRight className="w-5 h-5 text-muted-foreground/50" />
                     </div>
-                    <p className="text-[14px] text-white/60 truncate leading-snug font-medium">
+                    <p className="text-[14px] text-muted-foreground truncate leading-snug font-medium">
                       {char.description}
                     </p>
                   </div>
