@@ -9,10 +9,13 @@ import {
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 import { useQuery } from '@tanstack/react-query'
+import { useModalStore } from '@/stores/modalStore'
+import { compressImage } from '@/lib/image'
 
 export default function ProfilePage() {
   const { profile, signOut, refreshProfile } = useAuth()
   const { darkMode, toggleDarkMode } = useUIStore()
+  const modal = useModalStore()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Edit states
@@ -47,11 +50,33 @@ export default function ProfilePage() {
     }
   }, [profile, isEditing])
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+  const MAX_AVATAR_SIZE = 5 * 1024 * 1024  // 5MB
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    setAvatarFile(file)
-    setAvatarPreview(URL.createObjectURL(file))
+
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      modal.alert('只支援 JPEG、PNG、WebP、GIF 格式', { title: '格式不支援' })
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
+
+    if (file.size > MAX_AVATAR_SIZE) {
+      modal.alert('圖片大小不可超過 5MB', { title: '檔案過大' })
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
+
+    try {
+      const compressed = await compressImage(file, { maxWidth: 512, maxHeight: 512, quality: 0.8 })
+      setAvatarFile(compressed)
+      setAvatarPreview(URL.createObjectURL(compressed))
+    } catch (err: any) {
+      console.error(err)
+      modal.alert('圖片處理失敗，請重試', { title: '處理失敗' })
+    }
   }
 
   const handleSave = async () => {
@@ -61,7 +86,7 @@ export default function ProfilePage() {
       let finalAvatarUrl = profile.avatar_url
       if (avatarFile) {
         const ext = avatarFile.name.split('.').pop()
-        const path = `profiles/${profile.id}/${Date.now()}.${ext}`
+        const path = `${profile.id}/${Date.now()}.${ext}`
         const { error: uploadError } = await supabase.storage
           .from('avatars').upload(path, avatarFile, { upsert: true })
         if (uploadError) throw uploadError
@@ -81,8 +106,10 @@ export default function ProfilePage() {
       await refreshProfile()
       setIsEditing(false)
       setAvatarFile(null)
+      modal.alert('個人資料已成功更新！', { title: '更新成功' })
     } catch (err: any) {
-      console.error(err); alert('更新失敗')
+      console.error(err)
+      modal.alert(err.message || '更新失敗，請確認網路連線或稍後再試。', { title: '更新失敗' })
     } finally { setIsSaving(false) }
   }
 
