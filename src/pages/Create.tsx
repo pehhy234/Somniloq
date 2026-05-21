@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 import { useModalStore } from '@/stores/modalStore'
+import { compressImage } from '@/lib/image'
 
 interface CharacterForm {
   name: string
@@ -108,7 +109,7 @@ export default function CreatePage() {
   const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
   const MAX_AVATAR_SIZE = 5 * 1024 * 1024  // 5MB
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     // [Security L-03] Validate MIME type and size before upload
@@ -122,18 +123,32 @@ export default function CreatePage() {
       if (fileInputRef.current) fileInputRef.current.value = ''
       return
     }
-    setAvatarFile(file)
-    setAvatarPreview(URL.createObjectURL(file))
+    try {
+      const compressed = await compressImage(file, { maxWidth: 512, maxHeight: 512, quality: 0.8 })
+      setAvatarFile(compressed)
+      setAvatarPreview(URL.createObjectURL(compressed))
+    } catch (err: any) {
+      console.error('Image compression failed, using original file:', err)
+      setAvatarFile(file)
+      setAvatarPreview(URL.createObjectURL(file))
+    }
   }
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault()
     setIsDragging(false)
     const file = e.dataTransfer.files?.[0]
     // [Security L-03] Strict whitelist check instead of startsWith('image/')
     if (file && ALLOWED_IMAGE_TYPES.includes(file.type) && file.size <= MAX_AVATAR_SIZE) {
-      setAvatarFile(file)
-      setAvatarPreview(URL.createObjectURL(file))
+      try {
+        const compressed = await compressImage(file, { maxWidth: 512, maxHeight: 512, quality: 0.8 })
+        setAvatarFile(compressed)
+        setAvatarPreview(URL.createObjectURL(compressed))
+      } catch (err: any) {
+        console.error('Image compression failed, using original file:', err)
+        setAvatarFile(file)
+        setAvatarPreview(URL.createObjectURL(file))
+      }
     } else if (file) {
       modal.alert('只支援 JPEG、PNG、WebP、GIF（最大 5MB）', { title: '格式或大小不符' })
     }

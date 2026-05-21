@@ -16,6 +16,7 @@ import { ModelSwitcher } from '@/components/ModelSwitcher'
 import { ChatContextMenu } from '@/components/ChatContextMenu'
 import { useModalStore } from '@/stores/modalStore'
 import { Upload } from 'lucide-react'
+import { compressImage } from '@/lib/image'
 import { logger } from '@/lib/logger'
 
 interface ChatRoomContentProps {
@@ -338,12 +339,13 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
 
             try {
               setIsUploadingBg(true)
-              const ext = file.name.split('.').pop()
+              const compressed = await compressImage(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.75 })
+              const ext = compressed.name.split('.').pop()
               const path = `${user.id}/${Date.now()}.${ext}`
 
               const { error: uploadError } = await supabase.storage
                 .from('backgrounds')
-                .upload(path, file)
+                .upload(path, compressed)
 
               if (uploadError) throw uploadError
 
