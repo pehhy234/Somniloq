@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, ChevronDown, CheckCircle, Save, Settings2, Loader2 } from 'lucide-react'
+import { X, ChevronDown, CheckCircle, Save, Loader2 } from 'lucide-react'
 import type { Model } from '@/types'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
@@ -31,7 +31,6 @@ export function EditModelModal({
   saveModel,
   providers = []
 }: EditModelModalProps) {
-  const [showAdvanced, setShowAdvanced] = useState(false)
   const [showPresetDropdown, setShowPresetDropdown] = useState(false)
   const [selectedPresetIndex, setSelectedPresetIndex] = useState<number | null>(null)
   const [presetSearchText, setPresetSearchText] = useState('')
@@ -51,7 +50,6 @@ export function EditModelModal({
 
   // Reset local helpers when editing target changes
   useEffect(() => {
-    setShowAdvanced(false)
     setShowPresetDropdown(false)
     setSelectedPresetIndex(null)
     setPresetSearchText('')
