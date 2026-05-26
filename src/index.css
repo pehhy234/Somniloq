@@ -201,4 +201,33 @@
   /* Space optimizations */
   .p-safe-top { padding-top: env(safe-area-inset-top); }
   .p-safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+
+  /* Hide scrollbar completely (but still scrollable) */
+  .hide-scrollbar {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE / Edge */
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none; /* Chrome / Safari / Opera */
+  }
+
+  /* Custom styled scrollbar */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.4);
+  }
 }

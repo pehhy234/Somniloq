@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from './useAuth'
@@ -40,6 +40,7 @@ export function useChat(conversationId?: string) {
   const { model, setConversationModel } = useUIStore()
 
   const [isTyping, setIsTyping] = useState(false)
+  const abortControllerRef = useRef<AbortController | null>(null)
   
   // Helper to update query cache directly instead of local state
   const setMessages = useCallback((updater: ChatMessage[] | ((prev: ChatMessage[]) => ChatMessage[])) => {
@@ -225,6 +226,10 @@ export function useChat(conversationId?: string) {
         activeModelId = (configData as any)?.value || model || 'gemini-1.5-pro'
       }
 
+      // Create a fresh AbortController for this request
+      abortControllerRef.current = new AbortController()
+      const signal = abortControllerRef.current.signal
+
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`, {
         method: 'POST',
         headers: {
@@ -232,6 +237,7 @@ export function useChat(conversationId?: string) {
           'Authorization': `Bearer ${session?.access_token}`,
           'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
         },
+        signal,
         body: JSON.stringify({
           conversationId,
           characterId: charId,
@@ -249,17 +255,24 @@ export function useChat(conversationId?: string) {
       let fullAssistantMessage = ''
 
       if (reader) {
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-          
-          const chunk = decoder.decode(value, { stream: true })
-          fullAssistantMessage += chunk
-          
-          // Update the streaming message in UI
-          setMessages(prev => prev.map(msg => 
-            msg.id === tempAssistantId ? { ...msg, content: fullAssistantMessage } : msg
-          ))
+        try {
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            
+            const chunk = decoder.decode(value, { stream: true })
+            fullAssistantMessage += chunk
+            
+            // Update the streaming message in UI
+            setMessages(prev => prev.map(msg => 
+              msg.id === tempAssistantId ? { ...msg, content: fullAssistantMessage } : msg
+            ))
+          }
+        } catch (readErr: any) {
+          // AbortError is expected when user cancels — ignore it, keep what we have
+          if (readErr?.name !== 'AbortError') throw readErr
+        } finally {
+          reader.cancel().catch(() => {})
         }
       }
 
@@ -278,15 +291,23 @@ export function useChat(conversationId?: string) {
         // Update conversation updated_at
         await (supabase.from('conversations') as any).update({ updated_at: new Date().toISOString() }).eq('id', conversationId)
         queryClient.invalidateQueries({ queryKey: ['conversations'] })
+      } else {
+        // Nothing received (aborted immediately or empty response) — remove blank bubble
+        setMessages(prev => prev.filter(m => m.id !== tempAssistantId))
       }
-    } catch (err) {
-      logger.error('Streaming error:', err)
-      // Remove temp assistant message or show error mark
-      setMessages(prev => [
-        ...prev.filter(msg => msg.id !== tempAssistantId),
-        { id: crypto.randomUUID(), role: 'assistant', content: '（連線中斷或發生錯誤，請稍後再試）', created_at: new Date().toISOString() }
-      ])
+    } catch (err: any) {
+      if (err?.name === 'AbortError') {
+        // Aborted before any response arrived — remove the blank temp bubble
+        setMessages(prev => prev.filter(m => m.id !== tempAssistantId))
+      } else {
+        logger.error('Streaming error:', err)
+        setMessages(prev => [
+          ...prev.filter(msg => msg.id !== tempAssistantId),
+          { id: crypto.randomUUID(), role: 'assistant', content: '（連線中斷或發生錯誤，請稍後再試）', created_at: new Date().toISOString() }
+        ])
+      }
     } finally {
+      abortControllerRef.current = null
       setIsTyping(false)
     }
   }, [conversationId, user, queryClient, model, conversations])
@@ -299,6 +320,9 @@ export function useChat(conversationId?: string) {
     isTyping,
     startConversation,
     sendMessage,
+    abortMessage: () => {
+      abortControllerRef.current?.abort()
+    },
     deleteConversation,
     deleteMessage: async (msgId: string) => {
       const { error } = await supabase.from('messages').delete().eq('id', msgId)

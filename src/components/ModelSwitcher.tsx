@@ -125,7 +125,7 @@ export function ModelSwitcher({
       <button
         onClick={() => setOpen(true)}
         className={cn(
-          "flex items-center gap-2 transition-all duration-300 text-white active:scale-95",
+          "flex items-center gap-2 transition-all duration-300 text-foreground active:scale-95",
           minimalist 
             ? "px-2 py-1 text-[11px] font-extrabold hover:text-primary" 
             : "px-3.5 py-1.5 rounded-full bg-white/5 backdrop-blur-2xl border border-white/10 hover:bg-white/10 hover:border-white/20 text-[12px] font-bold shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)]"

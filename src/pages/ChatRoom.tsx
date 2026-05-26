@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { createPortal } from 'react-dom'
 import {
@@ -6,7 +6,8 @@ import {
   Lightbulb, Trash2,
   ChevronDown,
   Play, X, Menu,
-  RotateCcw, PenLine, Copy
+  RotateCcw, PenLine, Copy,
+  ChevronsUp, ChevronsDown, Square
 } from 'lucide-react'
 import { useChat, ChatMessage } from '@/hooks/useChat'
 import { useAuth } from '@/contexts/AuthContext'
@@ -36,7 +37,7 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
   const {
     messages, isMessagesLoading, isTyping,
     sendMessage, conversations, deleteMessage, updateMessage, regenerateMessage, getSuggestions,
-    rollbackMessage, updateConversationModel, updateConversationBg
+    rollbackMessage, updateConversationModel, updateConversationBg, abortMessage
   } = useChat(conversationId)
 
   const currentConv = conversations.find(c => c.id === conversationId)
@@ -50,13 +51,35 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
   const [contextMenu, setContextMenu] = useState<{ x: number, y: number, msg: ChatMessage } | null>(null)
 
   const msgsEndRef = useRef<HTMLDivElement>(null)
+  const msgsTopRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const touchTimer = useRef<any>(null)
+
+  const [showScrollUp, setShowScrollUp] = useState(false)
+  const [showScrollDown, setShowScrollDown] = useState(false)
 
   // 自動捲動
   useEffect(() => {
     msgsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isTyping])
+
+  // 追蹤捲動位置，決定是否顯示上/下按鈕
+  const handleScroll = useCallback(() => {
+    const el = scrollContainerRef.current
+    if (!el) return
+    const { scrollTop, scrollHeight, clientHeight } = el
+    setShowScrollUp(scrollTop > 120)
+    setShowScrollDown(scrollHeight - scrollTop - clientHeight > 120)
+  }, [])
+
+  const scrollToTop = () => {
+    scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const scrollToBottom = () => {
+    msgsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
 
   // 動態調整輸入框高度
   useEffect(() => {
@@ -228,17 +251,17 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
         <div className="flex items-center gap-2 pointer-events-auto">
           <div
             onClick={() => setInfoMode('full')}
-            className="flex items-center gap-2 pl-1 pr-3 py-1.5 rounded-full glass-pill transition-all duration-300 hover:bg-black/60 hover:border-white/20 cursor-pointer active:scale-95 group"
+            className="flex items-center gap-2 pl-1 pr-3 py-1.5 rounded-full glass-pill border border-border/40 dark:border-white/10 transition-all duration-300 hover:bg-card/85 dark:hover:bg-black/60 cursor-pointer active:scale-95 group"
           >
             {isMobilePage && (
               <button
                 onClick={(e) => { e.stopPropagation(); navigate('/chat'); }}
-                className="w-8 h-8 flex items-center justify-center rounded-full text-white/50 hover:text-white transition-all duration-300 hover:bg-white/8"
+                className="w-8 h-8 flex items-center justify-center rounded-full text-foreground/50 hover:text-foreground transition-all duration-300 hover:bg-foreground/5"
               >
                 <ArrowLeft className="w-4 h-4" />
               </button>
             )}
-            <div className="w-8 h-8 rounded-full overflow-hidden ring-1 ring-white/10 shrink-0 shadow-sm flex items-center justify-center bg-white/[0.03]">
+            <div className="w-8 h-8 rounded-full overflow-hidden ring-1 ring-border/40 dark:ring-white/10 shrink-0 shadow-sm flex items-center justify-center bg-foreground/[0.03]">
               {currentConv.character.avatar_url ? (
                 <img
                   src={currentConv.character.avatar_url}
@@ -246,11 +269,11 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
                   alt=""
                 />
               ) : (
-                <span className="text-[10px] font-bold text-white/40">{currentConv.character.name[0]}</span>
+                <span className="text-[10px] font-bold text-foreground/40">{currentConv.character.name[0]}</span>
               )}
             </div>
             <div className="flex flex-col">
-              <span className="text-[13px] font-bold text-white leading-tight tracking-tight">
+              <span className="text-[13px] font-bold text-foreground leading-tight tracking-tight">
                 {currentConv.character.name}
               </span>
             </div>
@@ -258,15 +281,15 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
         </div>
 
         {/* 右側功能膠囊 (Merged Block) */}
-        <div className="flex items-center gap-0.5 px-1 py-1.5 rounded-full glass-pill pointer-events-auto transition-all duration-300 hover:bg-black/60 hover:border-white/20">
+        <div className="flex items-center gap-0.5 px-1 py-1.5 rounded-full glass-pill border border-border/40 dark:border-white/10 pointer-events-auto transition-all duration-300 hover:bg-card/85 dark:hover:bg-black/60">
           <ModelSwitcher
             minimalist={true}
             conversationId={conversationId}
             modelId={currentConv.model_id || undefined}
             onSelect={(id) => updateConversationModel(conversationId, id)}
           />
-          <div className="w-[1px] h-3.5 bg-white/10 mx-0.5" />
-          <button className="w-8 h-8 flex items-center justify-center rounded-full text-white/50 hover:text-white transition-all duration-300 hover:bg-white/8">
+          <div className="w-[1px] h-3.5 bg-foreground/10 mx-0.5" />
+          <button className="w-8 h-8 flex items-center justify-center rounded-full text-foreground/50 hover:text-foreground transition-all duration-300 hover:bg-foreground/5">
             <Menu className="w-4 h-4" />
           </button>
         </div>
@@ -281,7 +304,13 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
       />
 
       {/* ── 對話內容區域 (Scrollable) ── */}
-      <div className="flex-1 overflow-y-auto px-4 relative z-10 hide-scrollbar scroll-smooth flex flex-col">
+      <div
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto px-4 relative z-10 hide-scrollbar scroll-smooth flex flex-col"
+      >
+        {/* 頂部錨點 */}
+        <div ref={msgsTopRef} />
         {/* 頂部增加墊片，確保在任何裝置都不會被遮擋 */}
         <div className="pt-16 pt-safe-top shrink-0" />
 
@@ -790,6 +819,36 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
         />
       )}
 
+      {/* ── 捲動快捷按鈕 ── */}
+      <div className="absolute right-3 bottom-[88px] z-50 flex flex-col gap-2 pointer-events-none">
+        <button
+          onClick={scrollToTop}
+          className={cn(
+            "pointer-events-auto w-9 h-9 flex items-center justify-center rounded-full",
+            "bg-black/50 dark:bg-black/60 backdrop-blur-md border border-white/15",
+            "text-white/60 hover:text-white hover:bg-black/70 hover:scale-110",
+            "shadow-lg transition-all duration-300",
+            showScrollUp ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"
+          )}
+          title="移至最上方"
+        >
+          <ChevronsUp className="w-4 h-4" />
+        </button>
+        <button
+          onClick={scrollToBottom}
+          className={cn(
+            "pointer-events-auto w-9 h-9 flex items-center justify-center rounded-full",
+            "bg-black/50 dark:bg-black/60 backdrop-blur-md border border-white/15",
+            "text-white/60 hover:text-white hover:bg-black/70 hover:scale-110",
+            "shadow-lg transition-all duration-300",
+            showScrollDown ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"
+          )}
+          title="移至最下方"
+        >
+          <ChevronsDown className="w-4 h-4" />
+        </button>
+      </div>
+
       {/* ── 懸浮底部輸入區 ── */}
       <div className="relative z-40 px-3 pb-2 sm:pb-4 pt-2 shrink-0 flex flex-col gap-2.5 pointer-events-none">
         {/* 建議區 */}
@@ -831,15 +890,15 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
         {/* 輸入膠囊 */}
         <div className="flex w-full justify-center pointer-events-auto">
           <div className={cn(
-            "flex w-full max-w-4xl items-end gap-1.5 glass-pill rounded-[24px] p-1.5 focus-within:bg-black/80 transition-all duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.4)]",
-            !isActive && "bg-white/5 opacity-80 cursor-not-allowed"
+            "flex w-full max-w-4xl items-end gap-1.5 glass-pill rounded-[24px] p-1.5 border border-border/40 dark:border-white/10 focus-within:bg-card/90 dark:focus-within:bg-black/80 transition-all duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.15)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)]",
+            !isActive && "bg-muted/40 dark:bg-white/5 opacity-80 cursor-not-allowed"
           )}>
             {/* 左側：建議按鈕 - 固定在底部 */}
             <button
               onClick={handleSuggest} disabled={isSuggesting || !isActive}
               className={cn(
                 "w-9 h-9 shrink-0 flex items-center justify-center rounded-full transition-all duration-300 active:scale-95 mb-0.5",
-                isSuggesting ? "bg-white/5 text-primary animate-pulse" : "bg-transparent text-yellow-400/40 hover:text-yellow-400 hover:bg-white/5",
+                isSuggesting ? "bg-muted dark:bg-white/5 text-primary animate-pulse" : "bg-transparent text-yellow-500/50 hover:text-yellow-500 hover:bg-foreground/5",
                 !isActive && "opacity-50 grayscale cursor-not-allowed"
               )}
             >
@@ -853,7 +912,7 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
               onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
               placeholder={isActive ? "開始輸入對話..." : "帳號啟用中，功能暫時受限..."}
               className={cn(
-                "flex-1 bg-transparent text-[15px] text-white/90 px-1 py-1.5 outline-none resize-none hide-scrollbar placeholder:text-white/20 leading-relaxed font-medium transition-all duration-200",
+                "flex-1 bg-transparent text-[15px] text-foreground px-1 py-1.5 outline-none resize-none hide-scrollbar placeholder:text-muted-foreground/30 leading-relaxed font-medium transition-all duration-200",
                 isMobilePage ? "max-h-[84px]" : "max-h-[160px]",
                 "overflow-y-auto"
               )}
@@ -862,13 +921,23 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
               style={{ height: '36px' }}
             />
 
-            {/* 右側：發送按鈕 - 固定在底部 */}
-            <button
-              onClick={handleSend} disabled={!input.trim() || isTyping || !isActive}
-              className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/20 active:scale-95 disabled:opacity-20 hover:brightness-110 transition-all duration-200 mb-0.5"
-            >
-              <Send className="w-4 h-4 ml-[2px]" />
-            </button>
+            {/* 右側：發送 / 中止 按鈕 - 固定在底部 */}
+            {isTyping ? (
+              <button
+                onClick={abortMessage}
+                className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full bg-red-500 text-white shadow-lg shadow-red-500/30 active:scale-95 hover:bg-red-600 transition-all duration-200 mb-0.5 animate-in zoom-in-50 duration-200"
+                title="中止生成"
+              >
+                <Square className="w-3.5 h-3.5 fill-white" />
+              </button>
+            ) : (
+              <button
+                onClick={handleSend} disabled={!input.trim() || !isActive}
+                className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/20 active:scale-95 disabled:opacity-20 hover:brightness-110 transition-all duration-200 mb-0.5 animate-in zoom-in-50 duration-200"
+              >
+                <Send className="w-4 h-4 ml-[2px]" />
+              </button>
+            )}
           </div>
         </div>
       </div>
