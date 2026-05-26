@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { Settings, ChevronDown, Save, CheckCircle } from 'lucide-react'
 import type { Model } from '@/types'
+import { cn } from '@/lib/utils'
 
 interface SystemSettingsProps {
   models: Model[]
@@ -24,6 +26,12 @@ export function SystemSettings({
   handleSaveDefaultChatModel,
   handleSaveSettings
 }: SystemSettingsProps) {
+  const [showDefaultDropdown, setShowDefaultDropdown] = useState(false)
+  const [showSuggestionDropdown, setShowSuggestionDropdown] = useState(false)
+
+  const selectedDefaultModel = models.find(m => m.model_id === pendingDefaultChatModelId)
+  const selectedSuggestionModel = models.find(m => m.model_id === pendingModelId)
+
   return (
     <div className="space-y-6">
       <div>
@@ -46,19 +54,38 @@ export function SystemSettings({
           
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <select
-                className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-sm text-foreground appearance-none focus:outline-none focus:border-primary/50 transition-all font-mono"
-                value={pendingDefaultChatModelId || ''}
-                onChange={(e) => setPendingDefaultChatModelId(e.target.value)}
+              <button
+                type="button"
+                onClick={() => setShowDefaultDropdown(!showDefaultDropdown)}
+                onBlur={() => setTimeout(() => setShowDefaultDropdown(false), 200)}
+                className="w-full bg-muted border border-primary/30 rounded-xl px-4 py-3 text-sm text-foreground flex items-center justify-between hover:border-primary/60 transition-all font-mono text-left"
               >
-                <option value="" disabled className="bg-card text-foreground">-- 選擇一個預設模型 --</option>
-                {models.map(m => (
-                  <option key={m.id} value={m.model_id} className="bg-card text-foreground border-b border-border py-2">
-                    {m.name} ({m.model_id})
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                <span className="truncate">
+                  {selectedDefaultModel 
+                    ? `${selectedDefaultModel.name} (${selectedDefaultModel.model_id})` 
+                    : '-- 選擇一個預設模型 --'}
+                </span>
+                <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform ml-2 shrink-0", showDefaultDropdown && "rotate-180")} />
+              </button>
+              
+              {showDefaultDropdown && (
+                <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-popover border border-border rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.8)] py-2 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 max-h-60 overflow-y-auto custom-scrollbar">
+                  {models.map(m => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      className="w-full text-left px-4 py-2.5 text-sm text-foreground hover:bg-muted transition-colors flex items-center justify-between font-mono"
+                      onClick={() => {
+                        setPendingDefaultChatModelId(m.model_id)
+                        setShowDefaultDropdown(false)
+                      }}
+                    >
+                      <span className="truncate">{m.name} ({m.model_id})</span>
+                      {pendingDefaultChatModelId === m.model_id && <CheckCircle className="w-3.5 h-3.5 text-primary shrink-0 ml-2" />}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             
             <button
@@ -78,7 +105,7 @@ export function SystemSettings({
         </div>
 
         {/* Suggestion Model */}
-        <div className="space-y-4 pl-4 border-l-2 border-l-blue-400/40">
+        <div className="space-y-4 pl-4 border-l-2 border-l-primary/40">
           <div>
             <h3 className="text-sm font-black text-foreground">【聊天室燈泡】AI 建議模型</h3>
             <p className="text-xs text-muted-foreground leading-relaxed mt-1.5">
@@ -88,19 +115,38 @@ export function SystemSettings({
           
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <select
-                className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-sm text-foreground appearance-none focus:outline-none focus:border-primary/50 transition-all font-mono"
-                value={pendingModelId || ''}
-                onChange={(e) => setPendingModelId(e.target.value)}
+              <button
+                type="button"
+                onClick={() => setShowSuggestionDropdown(!showSuggestionDropdown)}
+                onBlur={() => setTimeout(() => setShowSuggestionDropdown(false), 200)}
+                className="w-full bg-muted border border-primary/30 rounded-xl px-4 py-3 text-sm text-foreground flex items-center justify-between hover:border-primary/60 transition-all font-mono text-left"
               >
-                <option value="" disabled className="bg-card text-foreground">-- 選擇一個模型 --</option>
-                {models.map(m => (
-                  <option key={m.id} value={m.model_id} className="bg-card text-foreground border-b border-border py-2">
-                    {m.name} ({m.model_id})
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                <span className="truncate">
+                  {selectedSuggestionModel 
+                    ? `${selectedSuggestionModel.name} (${selectedSuggestionModel.model_id})` 
+                    : '-- 選擇一個預設模型 --'}
+                </span>
+                <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform ml-2 shrink-0", showSuggestionDropdown && "rotate-180")} />
+              </button>
+              
+              {showSuggestionDropdown && (
+                <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-popover border border-border rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.8)] py-2 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 max-h-60 overflow-y-auto custom-scrollbar">
+                  {models.map(m => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      className="w-full text-left px-4 py-2.5 text-sm text-foreground hover:bg-muted transition-colors flex items-center justify-between font-mono"
+                      onClick={() => {
+                        setPendingModelId(m.model_id)
+                        setShowSuggestionDropdown(false)
+                      }}
+                    >
+                      <span className="truncate">{m.name} ({m.model_id})</span>
+                      {pendingModelId === m.model_id && <CheckCircle className="w-3.5 h-3.5 text-primary shrink-0 ml-2" />}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             
             <button

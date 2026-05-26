@@ -484,48 +484,36 @@ export default function CreatePage() {
             </div>
 
 
-            {/* Row 3: Prompt (full width) — Card-like redesign (neutral) */}
-            <div className="relative group">
-              <div className="relative rounded-[24px] border border-border bg-muted/30 p-6 space-y-4 shadow-sm backdrop-blur-md transition-all duration-300 group-focus-within:border-primary/30">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <label className={cn(labelRequiredClass, 'mb-0')}>
-                      角色設定 (Prompt) <span className="text-primary normal-case tracking-normal font-black">*</span>
-                    </label>
-                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20">
-                      <Sparkles className="w-3 h-3 text-primary" />
-                      <span className="text-[9px] font-black uppercase tracking-wider text-primary">核心設定</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className={cn(
-                      "flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold tabular-nums transition-all duration-300",
-                      form.prompt.length > 2000
-                        ? "bg-primary/20 text-primary border border-primary/30"
-                        : "bg-muted text-muted-foreground border border-border"
-                    )}>
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                      {form.prompt.length.toLocaleString()} / 20,000
-                    </div>
+            {/* Prompt (full width) — Consistent with other form fields */}
+            <div className="flex flex-col">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <label className={cn(labelRequiredClass, 'mb-0')}>
+                    角色設定 (Prompt) <span className="text-primary normal-case tracking-normal font-black">*</span>
+                  </label>
+                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20">
+                    <Sparkles className="w-3 h-3 text-primary" />
+                    <span className="text-[9px] font-black uppercase tracking-wider text-primary">核心設定</span>
                   </div>
                 </div>
-                <textarea
-                  id="create-prompt"
-                  value={form.prompt}
-                  onChange={(e) => set('prompt', e.target.value)}
-                  placeholder={`描述角色的個性、背景、說話方式…\n\n例：你是艾拉，一位25歲的輕柔醫生。`}
-                  rows={12}
-                  className={cn(
-                    'w-full px-4 py-4 rounded-xl text-[15px] font-medium leading-relaxed transition-all duration-300',
-                    'bg-muted/60 border border-border text-foreground placeholder:text-muted-foreground/30 resize-y min-h-[300px]',
-                    'focus:outline-none focus:border-primary/40 focus:bg-muted/80'
-                  )}
-                />
-                <div className="pt-2 flex items-center justify-between opacity-0 group-focus-within:opacity-100 transition-opacity duration-300">
-                  <p className="text-[10px] text-muted-foreground/40 font-medium">提示：豐富的設定能提升對話品質</p>
-                  <RefreshCw className="w-3.5 h-3.5 text-muted-foreground/20" />
+                <div className={cn(
+                  "flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold tabular-nums transition-all duration-300",
+                  form.prompt.length > 2000
+                    ? "bg-primary/20 text-primary border border-primary/30"
+                    : "bg-muted text-muted-foreground border border-border"
+                )}>
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                  {form.prompt.length.toLocaleString()} / 20,000
                 </div>
               </div>
+              <textarea
+                id="create-prompt"
+                value={form.prompt}
+                onChange={(e) => set('prompt', e.target.value)}
+                placeholder={`描述角色的個性、背景、說話方式…\n\n例：你是艾拉，一位25歲的輕柔醫生。`}
+                rows={12}
+                className={cn(inputClass, 'resize-y min-h-[320px] leading-relaxed')}
+              />
             </div>
 
             {/* Actions */}
