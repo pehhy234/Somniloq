@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Shield, Loader2, Users, Database, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAdminState } from '@/hooks/useAdminState'
@@ -5,6 +6,7 @@ import { UserManagement } from '@/components/admin/UserManagement'
 import { ModelManagement } from '@/components/admin/ModelManagement'
 import { SystemSettings } from '@/components/admin/SystemSettings'
 import { EditModelModal } from '@/components/admin/EditModelModal'
+import { ProviderManagementModal } from '@/components/admin/ProviderManagementModal'
 
 export default function AdminPage() {
   const {
@@ -46,8 +48,12 @@ export default function AdminPage() {
     deleteModel,
     saveModel,
     handleSaveSettings,
-    handleSaveDefaultChatModel
+    handleSaveDefaultChatModel,
+    providers,
+    saveProviders
   } = useAdminState()
+
+  const [showProvidersModal, setShowProvidersModal] = useState(false)
 
   if (!isAdmin) {
     return (
@@ -151,6 +157,7 @@ export default function AdminPage() {
             deleteModel={deleteModel}
             setIsEditingModel={setIsEditingModel}
             setEditForm={setEditForm}
+            onManageProviders={() => setShowProvidersModal(true)}
           />
         ) : (
           <SystemSettings
@@ -167,7 +174,6 @@ export default function AdminPage() {
         )}
       </div>
 
-      {/* Edit Model Modal */}
       <EditModelModal
         models={models}
         isEditingModel={isEditingModel}
@@ -179,6 +185,15 @@ export default function AdminPage() {
         showProviderDropdown={showProviderDropdown}
         setShowProviderDropdown={setShowProviderDropdown}
         saveModel={saveModel}
+        providers={providers}
+      />
+
+      {/* Provider Management Modal */}
+      <ProviderManagementModal
+        isOpen={showProvidersModal}
+        onClose={() => setShowProvidersModal(false)}
+        providers={providers}
+        saveProviders={saveProviders}
       />
     </div>
   )

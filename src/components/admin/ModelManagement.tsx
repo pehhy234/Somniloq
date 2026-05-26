@@ -18,6 +18,7 @@ interface ModelManagementProps {
   deleteModel: (id: string) => Promise<void>
   setIsEditingModel: (id: string | null) => void
   setEditForm: (form: Partial<Model>) => void
+  onManageProviders?: () => void
 }
 
 export function ModelManagement({
@@ -35,7 +36,8 @@ export function ModelManagement({
   toggleModelActive,
   deleteModel,
   setIsEditingModel,
-  setEditForm
+  setEditForm,
+  onManageProviders
 }: ModelManagementProps) {
   // Filter logic
   const filteredModels = models.filter(m => {
@@ -63,28 +65,39 @@ export function ModelManagement({
             <h2 className="text-lg font-black whitespace-nowrap">AI 模型列表</h2>
             <p className="text-[11px] text-muted-foreground/50 mt-0.5 font-medium">管理可用的 AI 對話模型</p>
           </div>
-          <button
-            onClick={() => {
-              setEditForm({ 
-                name: '', 
-                provider: 'google', 
-                model_id: '', 
-                category: '', 
-                is_active: true,
-                api_key_name: '',
-                base_url: '',
-                icon_url: '',
-                tags: [],
-                description: ''
-              })
-              setIsEditingModel('new')
-            }}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-full text-white font-bold text-sm transition-all shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:brightness-110 active:scale-[0.98] cursor-pointer"
-            style={{ background: 'linear-gradient(135deg, hsl(267, 46%, 35%), hsl(244, 52%, 31%))' }}
-          >
-            <Plus className="w-4 h-4" />
-            Add Model
-          </button>
+          <div className="flex items-center gap-2">
+            {onManageProviders && (
+              <button
+                onClick={onManageProviders}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-muted border border-border text-foreground hover:bg-muted/80 font-bold text-sm transition-all active:scale-[0.98] cursor-pointer"
+              >
+                <Database className="w-4 h-4 text-primary" />
+                管理供應商
+              </button>
+            )}
+            <button
+              onClick={() => {
+                setEditForm({ 
+                  name: '', 
+                  provider: '', 
+                  model_id: '', 
+                  category: '', 
+                  is_active: true,
+                  api_key_name: '',
+                  base_url: '',
+                  icon_url: '',
+                  tags: [],
+                  description: ''
+                })
+                setIsEditingModel('new')
+              }}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-full text-white font-bold text-sm transition-all shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:brightness-110 active:scale-[0.98] cursor-pointer"
+              style={{ background: 'linear-gradient(135deg, hsl(267, 46%, 35%), hsl(244, 52%, 31%))' }}
+            >
+              <Plus className="w-4 h-4" />
+              Add Model
+            </button>
+          </div>
         </div>
 
         {/* Advanced Filter Row */}
@@ -189,9 +202,9 @@ export function ModelManagement({
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-border bg-muted/30">
-                <th className="p-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Provider / Name</th>
+                <th className="p-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Model Name</th>
                 <th className="p-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Model ID</th>
-                <th className="p-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Categories</th>
+                <th className="p-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Category & Tags</th>
                 <th className="p-5 text-center text-xs font-black text-muted-foreground uppercase tracking-widest">Status</th>
                 <th className="p-5 text-right text-xs font-black text-muted-foreground uppercase tracking-widest">Options</th>
               </tr>
@@ -209,8 +222,10 @@ export function ModelManagement({
                         </div>
                       )}
                       <div>
-                        <p className="font-semibold text-sm">{m.name}</p>
-                        <p className="text-xs text-muted-foreground uppercase">{m.provider}</p>
+                        <p className="font-bold text-sm text-foreground">{m.name}</p>
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-muted text-[10px] font-mono text-muted-foreground border border-border uppercase mt-0.5 font-bold">
+                          {m.provider}
+                        </span>
                       </div>
                     </div>
                   </td>
@@ -219,9 +234,11 @@ export function ModelManagement({
                   </td>
                   <td className="p-4">
                     <div className="flex flex-wrap gap-1">
-                      <span className="px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] uppercase font-bold border border-primary/20">
-                        {m.category}
-                      </span>
+                      {m.category && (
+                        <span className="px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] uppercase font-bold border border-primary/20">
+                          {m.category}
+                        </span>
+                      )}
                       {m.tags && m.tags.map((tag, i) => (
                         <span key={i} className="px-1.5 py-0.5 rounded-md bg-muted text-[10px] text-muted-foreground border border-border">
                           {tag}

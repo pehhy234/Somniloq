@@ -37,6 +37,7 @@ export function useAdminState() {
   
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [providers, setProviders] = useState<any[]>([])
 
   useEffect(() => {
     if (!isAdmin) return
@@ -44,6 +45,7 @@ export function useAdminState() {
       loadProfiles()
     } else if (activeTab === 'models') {
       loadModels()
+      loadSettings()
     } else if (activeTab === 'settings') {
       loadModels()
       loadSettings()
@@ -88,8 +90,27 @@ export function useAdminState() {
     }
   }
 
+  const DEFAULT_PROVIDERS = [
+    { key: 'google', name: 'Google (Official)', base_url: '', api_key_name: 'GEMINI_API_KEY' },
+    { key: 'openai', name: 'OpenAI (Official)', base_url: 'https://api.openai.com/v1', api_key_name: 'OPENAI_API_KEY' },
+    { key: 'deepseek', name: 'DeepSeek', base_url: 'https://api.deepseek.com/v1', api_key_name: 'DEEPSEEK_API_KEY' },
+    { key: 'anthropic', name: 'Anthropic', base_url: 'https://api.anthropic.com/v1', api_key_name: 'ANTHROPIC_API_KEY' },
+    { key: 'openrouter', name: 'OpenRouter', base_url: 'https://openrouter.ai/api/v1', api_key_name: 'OPENROUTER_API_KEY' }
+  ]
+
   const loadSettings = async () => {
     try {
+      // Load providers directly from the public.providers table
+      const { data: provData, error: provErr } = await (supabase.from('providers') as any)
+        .select('*')
+        .order('name', { ascending: true })
+      
+      if (!provErr && provData && provData.length > 0) {
+        setProviders(provData)
+      } else {
+        setProviders(DEFAULT_PROVIDERS)
+      }
+
       const { data, error: settingsErr } = await supabase
         .from('configs')
         .select('key, value')
@@ -142,6 +163,40 @@ export function useAdminState() {
       modal.alert('預設對話模型設定已更新並生效。', { title: '儲存成功' })
     } catch (err: any) {
       modal.alert(`儲存設定失敗: ${err.message}`, { title: '系統錯誤' })
+    }
+  }
+
+  const saveProviders = async (newProviders: any[]) => {
+    try {
+      // 1. Get existing keys in database
+      const { data: existing } = await (supabase.from('providers') as any).select('key')
+      const existingKeys = ((existing || []) as any[]).map(p => p.key)
+      const newKeys = newProviders.map(p => p.key)
+      
+      // 2. Find keys to delete
+      const keysToDelete = existingKeys.filter(k => !newKeys.includes(k))
+      if (keysToDelete.length > 0) {
+        const { error: delErr } = await (supabase.from('providers') as any).delete().in('key', keysToDelete)
+        if (delErr) throw delErr
+      }
+      
+      // 3. Upsert new/updated providers
+      const { error: upsertErr } = await (supabase.from('providers') as any).upsert(
+        newProviders.map(p => ({
+          key: p.key,
+          name: p.name,
+          base_url: p.base_url,
+          api_key_name: p.api_key_name
+        })),
+        { onConflict: 'key' }
+      )
+      if (upsertErr) throw upsertErr
+      
+      setProviders(newProviders)
+      return true
+    } catch (err: any) {
+      modal.alert(`儲存供應商失敗: ${err.message}`, { title: '系統錯誤' })
+      return false
     }
   }
 
@@ -208,11 +263,6 @@ export function useAdminState() {
       const formattedName = toTitleCase(editForm.name || '')
       const formattedCategory = toTitleCase(editForm.category || '')
 
-      let apiKeyName = (editForm.api_key_name || '').toUpperCase().trim()
-      if (apiKeyName && !apiKeyName.endsWith('_API_KEY')) {
-        apiKeyName = `${apiKeyName}_API_KEY`
-      }
-
       const safePayload = {
         name:        formattedName,
         provider:    editForm.provider    ?? 'google',
@@ -221,8 +271,6 @@ export function useAdminState() {
         category:    formattedCategory,
         tags:        tagsArray,
         is_active:   editForm.is_active   ?? true,
-        api_key_name: apiKeyName,
-        base_url:    editForm.base_url    ?? '',
         icon_url:    editForm.icon_url    ?? '',
       }
 
@@ -289,6 +337,8 @@ export function useAdminState() {
     deleteModel,
     saveModel,
     handleSaveSettings,
-    handleSaveDefaultChatModel
+    handleSaveDefaultChatModel,
+    providers,
+    saveProviders
   }
 }
