@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronDown, ChevronUp, Sparkles, ArrowRight } from 'lucide-react'
+import { Sparkles, ArrowRight } from 'lucide-react'
 import { useCharacters, useAllPublicTags } from '@/hooks/useCharacters'
 import { useChat } from '@/hooks/useChat'
 import { CharacterCard, CharacterCardSkeleton } from '@/components/CharacterCard'
@@ -28,7 +28,6 @@ export default function LobbyPage() {
       setSearch('')
     }
   }, [searchInput])
-
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768)
@@ -36,6 +35,7 @@ export default function LobbyPage() {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
+  const initialTagLimit = isMobile ? 4 : 8
   const { data: characters = [], isLoading } = useCharacters({
     search,
     tags: selectedTags,
@@ -43,10 +43,44 @@ export default function LobbyPage() {
   })
   const { data: availableTags = [] } = useAllPublicTags()
 
-  const initialTagLimit = isMobile ? 4 : 8
-  const visibleTags = tagsExpanded ? availableTags : availableTags.slice(0, initialTagLimit)
+  // Mouse drag-to-scroll state for horizontal tags list
+  const [isDown, setIsDown] = useState(false)
+  const [startX, setStartX] = useState(0)
+  const [scrollLeft, setScrollLeft] = useState(0)
+  const [dragged, setDragged] = useState(false)
 
-  const toggleTag = (tag: string) => {
+  const onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    setIsDown(true)
+    setStartX(e.pageX - e.currentTarget.offsetLeft)
+    setScrollLeft(e.currentTarget.scrollLeft)
+    setDragged(false)
+  }
+
+  const onMouseLeave = () => {
+    setIsDown(false)
+  }
+
+  const onMouseUp = () => {
+    setIsDown(false)
+  }
+
+  const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDown) return
+    e.preventDefault()
+    const x = e.pageX - e.currentTarget.offsetLeft
+    const walk = (x - startX) * 1.6 // Scroll speed multiplier
+    e.currentTarget.scrollLeft = scrollLeft - walk
+    if (Math.abs(x - startX) > 6) {
+      setDragged(true)
+    }
+  }
+
+  const handleTagClick = (e: React.MouseEvent, tag: string) => {
+    if (dragged) {
+      e.preventDefault()
+      e.stopPropagation()
+      return
+    }
     setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     )
@@ -103,10 +137,11 @@ export default function LobbyPage() {
       )}
 
       {/* ── Top search area ── */}
-      <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-3xl border-b border-border shadow-sm px-4 md:px-8 pt-3 md:pt-5 pb-3 md:pb-5">
-        <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-8">
-          {/* 搜尋區塊 - 固定寬度 */}
-          <div className="flex items-center gap-3 shrink-0 md:w-[420px]">
+      <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-3xl border-b border-border shadow-sm px-4 md:px-8 py-3.5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6 w-full relative">
+          
+          {/* Left: Search input */}
+          <div className="flex items-center gap-3 shrink-0 w-full md:w-[320px] lg:w-[420px]">
             {/* Minimal Logo (Mobile Only) */}
             <div className="flex items-center md:hidden shrink-0">
               <div
@@ -129,7 +164,7 @@ export default function LobbyPage() {
                 onChange={(e) => setSearchInput(e.target.value)}
                 placeholder="搜尋角色..."
                 className={cn(
-                  'w-full pl-12 pr-12 py-3 rounded-full text-[15px] font-bold transition-all duration-300',
+                  'w-full pl-12 pr-12 py-2.5 rounded-full text-[14px] font-bold transition-all duration-300',
                   'bg-muted/80 border border-border text-foreground placeholder:text-muted-foreground/60 shadow-sm backdrop-blur-2xl',
                   'group-hover/search:bg-muted group-hover/search:border-border/80',
                   'focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary focus:shadow-[0_0_35px_rgba(168,85,247,0.15)]'
@@ -150,19 +185,28 @@ export default function LobbyPage() {
             </form>
           </div>
 
-          {/* 標籤導航區塊 - 次要導覽風格 */}
+          {/* Right: Tag list (Horizontal single row with mouse drag-to-scroll) */}
           {availableTags.length > 0 && (
-            <div className="flex-1 flex items-center overflow-x-auto hide-scrollbar">
-              <div className="flex items-center gap-2 pr-4 min-w-max">
-                {/* 垂直分割線 (僅電腦版) */}
-                <div className="hidden md:block w-px h-4 bg-border mx-2" />
-                
-                {visibleTags.map((tag) => (
+            <div className="flex-1 flex items-center overflow-hidden w-full md:w-auto">
+              {/* Vertical divider */}
+              <div className="hidden md:block w-px h-4 bg-border mx-4 shrink-0" />
+              
+              <div 
+                onMouseDown={onMouseDown}
+                onMouseLeave={onMouseLeave}
+                onMouseUp={onMouseUp}
+                onMouseMove={onMouseMove}
+                className={cn(
+                  "flex-1 flex items-center gap-2 overflow-x-auto custom-scrollbar pb-2 select-none pr-4",
+                  "cursor-grab active:cursor-grabbing transition-all duration-150"
+                )}
+              >
+                {(tagsExpanded ? availableTags : availableTags.slice(0, initialTagLimit)).map((tag) => (
                   <button
                     key={tag}
-                    onClick={() => toggleTag(tag)}
+                    onClick={(e) => handleTagClick(e, tag)}
                     className={cn(
-                      'px-3.5 py-1.5 rounded-full text-[12px] font-semibold transition-all duration-200 border whitespace-nowrap active:scale-95',
+                      'px-3.5 py-1.5 rounded-full text-[12px] font-semibold transition-all duration-200 border whitespace-nowrap active:scale-95 shrink-0',
                       selectedTags.includes(tag)
                         ? 'bg-primary/20 text-primary border-primary/40'
                         : 'bg-transparent text-muted-foreground border-border hover:text-foreground hover:bg-muted hover:border-border'
@@ -171,19 +215,31 @@ export default function LobbyPage() {
                     {tag}
                   </button>
                 ))}
-                
+
                 {availableTags.length > initialTagLimit && (
                   <button
-                    onClick={() => setTagsExpanded(!tagsExpanded)}
-                    className="px-3 py-1.5 rounded-full text-[12px] font-bold text-muted-foreground hover:text-primary transition-all flex items-center gap-1 active:scale-95"
+                    onClick={(e) => {
+                      if (dragged) {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        return
+                      }
+                      setTagsExpanded(!tagsExpanded)
+                    }}
+                    className={cn(
+                      "px-3.5 py-1.5 rounded-full text-[12px] font-bold transition-all flex items-center gap-1 active:scale-95 border whitespace-nowrap shrink-0",
+                      tagsExpanded
+                        ? "bg-primary text-white border-primary shadow-lg shadow-primary/20"
+                        : "bg-transparent text-muted-foreground border-border hover:text-foreground"
+                    )}
                   >
-                    {tagsExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                    {tagsExpanded ? '收合' : '更多'}
+                    <span>{tagsExpanded ? '收合' : '更多'}</span>
                   </button>
                 )}
               </div>
             </div>
           )}
+
         </div>
       </div>
 

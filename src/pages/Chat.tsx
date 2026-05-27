@@ -181,7 +181,7 @@ export default function ChatPage() {
               conversations.map((conv) => (
                 <div 
                   key={conv.id} 
-                  className="relative group/card overflow-hidden rounded-3xl mb-3"
+                  className="relative group overflow-hidden rounded-3xl mb-3"
                   onTouchStart={handleTouchStart}
                   onTouchMove={(e) => handleTouchMove(e, conv.id)}
                   onTouchEnd={handleTouchEnd}
