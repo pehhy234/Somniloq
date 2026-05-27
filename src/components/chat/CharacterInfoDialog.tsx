@@ -83,7 +83,7 @@ export function CharacterInfoDialog({
                     onClose()
                     navigate(`/create/${character.id}`)
                   } else {
-                    modal.alert('您不是此角色的創作者，且無管理員權限，無法進行修改。', { title: '權限不足' })
+                    modal.alert('您不是此角色的創作者，無法進行修改。', { title: '權限不足' })
                   }
                 }}
                 className="flex flex-col items-center justify-center py-2.5 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-primary/10 transition-all active:scale-95 group"

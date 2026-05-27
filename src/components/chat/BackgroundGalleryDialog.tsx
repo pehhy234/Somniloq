@@ -200,7 +200,7 @@ export function BackgroundGalleryDialog({
                       e.stopPropagation()
                       handleDeleteBg(url)
                     }}
-                    className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 backdrop-blur-md border border-white/10 flex items-center justify-center text-white/40 hover:text-red-500 hover:bg-black/80 opacity-0 group-hover:opacity-100 transition-all duration-200"
+                    className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 backdrop-blur-md border border-white/10 flex items-center justify-center text-white/40 hover:text-red-500 hover:bg-black/80 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-200"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
