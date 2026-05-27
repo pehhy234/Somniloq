@@ -211,6 +211,52 @@
     display: none; /* Chrome / Safari / Opera */
   }
 
+  /* Auth page animations */
+  @keyframes blob-float-1 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33%       { transform: translate(30px, -40px) scale(1.05); }
+    66%       { transform: translate(-20px, 20px) scale(0.97); }
+  }
+  @keyframes blob-float-2 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33%       { transform: translate(-40px, 30px) scale(1.04); }
+    66%       { transform: translate(20px, -25px) scale(0.98); }
+  }
+  @keyframes blob-float-3 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50%       { transform: translate(15px, -20px) scale(1.03); }
+  }
+  @keyframes auth-card-in {
+    from { opacity: 0; transform: translateY(24px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes auth-logo-in {
+    from { opacity: 0; transform: translateY(-16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes auth-field-in {
+    from { opacity: 0; transform: translateX(-8px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes cooldown-shrink {
+    from { width: 100%; }
+    to   { width: 0%; }
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%       { transform: translateX(-6px); }
+    40%       { transform: translateX(6px); }
+    60%       { transform: translateX(-4px); }
+    80%       { transform: translateX(4px); }
+  }
+  .auth-blob-1 { animation: blob-float-1 12s ease-in-out infinite; }
+  .auth-blob-2 { animation: blob-float-2 16s ease-in-out infinite; }
+  .auth-blob-3 { animation: blob-float-3 10s ease-in-out infinite; }
+  .auth-card-in  { animation: auth-card-in  0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .auth-logo-in  { animation: auth-logo-in  0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both; }
+  .auth-field-in { animation: auth-field-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .auth-shake    { animation: shake 0.4s ease-in-out; }
+
   /* Custom styled scrollbar */
   .custom-scrollbar {
     scrollbar-width: thin;

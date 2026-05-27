@@ -18,7 +18,10 @@ const ModalOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "fixed inset-0 z-[200]",
+      "bg-[hsl(224,71%,2%)]/70 backdrop-blur-md",
+      "data-[state=open]:animate-in data-[state=closed]:animate-out",
+      "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className
     )}
     {...props}
@@ -35,13 +38,42 @@ const ModalContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed left-[50%] top-[50%] z-[201] grid w-full max-w-sm translate-x-[-50%] translate-y-[-50%] gap-4 glass-lg p-6 shadow-2xl duration-200 shadow-[0_32px_128px_rgba(0,0,0,0.8)] rounded-3xl [border-radius:2rem] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]",
+        // Position & size
+        "fixed left-[50%] top-[50%] z-[201] w-full max-w-sm",
+        "translate-x-[-50%] translate-y-[-50%]",
+        // Glassmorphism card — matches auth card style
+        "relative overflow-hidden",
+        "bg-[hsl(224,71%,4%)]/80 backdrop-blur-3xl",
+        "border border-white/10",
+        "rounded-[28px] p-6",
+        // Depth shadow with purple tint
+        "shadow-[0_32px_80px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.04)_inset]",
+        // Animations
+        "duration-200",
+        "data-[state=open]:animate-in data-[state=closed]:animate-out",
+        "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+        "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
+        "data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%]",
+        "data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]",
         className
       )}
       {...props}
     >
-      {children}
-      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-full p-2 opacity-70 ring-offset-background transition-opacity hover:opacity-100 hover:bg-white/10 focus:outline-none disabled:pointer-events-none">
+      {/* Inner gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-transparent to-transparent pointer-events-none rounded-[28px]" />
+      {/* Top shine line */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/5 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+      {/* Purple ambient glow (top-left) */}
+      <div
+        className="absolute -top-16 -left-16 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none"
+        style={{ background: 'hsl(267, 100%, 72%)' }}
+      />
+
+      <div className="relative z-10">
+        {children}
+      </div>
+
+      <DialogPrimitive.Close className="absolute right-3.5 top-3.5 z-20 rounded-xl p-1.5 text-muted-foreground/60 hover:text-foreground hover:bg-white/8 transition-all focus:outline-none">
         <X className="h-4 w-4" />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>
