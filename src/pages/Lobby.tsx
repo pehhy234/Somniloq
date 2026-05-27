@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronDown, ChevronUp, Loader2, Sparkles, ArrowRight } from 'lucide-react'
+import { ChevronDown, ChevronUp, Sparkles, ArrowRight } from 'lucide-react'
 import { useCharacters, useAllPublicTags } from '@/hooks/useCharacters'
 import { useChat } from '@/hooks/useChat'
-import { CharacterCard } from '@/components/CharacterCard'
+import { CharacterCard, CharacterCardSkeleton } from '@/components/CharacterCard'
 import { cn } from '@/lib/utils'
 import type { CharacterWithAuthor } from '@/types'
 import { useAuth } from '@/hooks/useAuth'
@@ -178,9 +178,21 @@ export default function LobbyPage() {
         )}
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          </div>
+          <>
+            {/* Mobile skeleton */}
+            <div className="flex flex-col gap-3 md:hidden">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <CharacterCardSkeleton key={i} variant="horizontal" />
+              ))}
+            </div>
+
+            {/* Desktop skeleton */}
+            <div className="hidden md:grid md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <CharacterCardSkeleton key={i} variant="vertical" />
+              ))}
+            </div>
+          </>
         ) : characters.length === 0 ? (
           <EmptyState search={search} />
         ) : (

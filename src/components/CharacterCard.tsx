@@ -138,3 +138,54 @@ export function CharacterAvatar({ src, name, size = 'md', className }: AvatarPro
     </div>
   )
 }
+
+export function CharacterCardSkeleton({ variant = 'horizontal' }: { variant?: 'horizontal' | 'vertical' }) {
+  if (variant === 'vertical') {
+    return (
+      <div className="rounded-3xl overflow-hidden glass-md border border-white/5 relative aspect-[4/5] bg-white/[0.02] animate-pulse flex flex-col justify-end p-5">
+        <div className="space-y-3 z-10 w-full">
+          {/* Name placeholder */}
+          <div className="h-4 bg-white/10 rounded-full w-2/3" />
+          
+          {/* Description placeholders */}
+          <div className="space-y-1.5">
+            <div className="h-3 bg-white/5 rounded-full w-full" />
+            <div className="h-3 bg-white/5 rounded-full w-5/6" />
+            <div className="h-3 bg-white/5 rounded-full w-2/3" />
+          </div>
+
+          {/* Author placeholder */}
+          <div className="flex justify-end pt-1">
+            <div className="h-2.5 bg-white/10 rounded-full w-1/3" />
+          </div>
+        </div>
+        {/* Bottom gradient placeholder overlay */}
+        <div className="absolute inset-x-0 bottom-0 h-[45%] z-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none" />
+      </div>
+    )
+  }
+
+  // Horizontal layout (mobile)
+  return (
+    <div className="flex rounded-[28px] glass-md border border-white/5 overflow-hidden h-[120px] bg-white/[0.02] animate-pulse items-center">
+      {/* Thumbnail placeholder */}
+      <div className="w-[105px] shrink-0 h-full bg-white/5" />
+
+      {/* Info placeholder */}
+      <div className="flex-1 px-4 py-2 flex flex-col justify-center space-y-3">
+        {/* Name placeholder */}
+        <div className="h-4 bg-white/10 rounded-full w-1/2" />
+        {/* Description placeholder */}
+        <div className="space-y-1.5">
+          <div className="h-3 bg-white/5 rounded-full w-full" />
+          <div className="h-3 bg-white/5 rounded-full w-2/3" />
+        </div>
+        {/* Author placeholder */}
+        <div className="flex justify-end pt-1">
+          <div className="h-2.5 bg-white/10 rounded-full w-1/4" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
