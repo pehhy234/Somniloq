@@ -325,14 +325,24 @@ export function useChat(conversationId?: string) {
     },
     deleteConversation,
     deleteMessage: async (msgId: string) => {
-      const { error } = await supabase.from('messages').delete().eq('id', msgId)
-      if (error) throw error
+      const previousMessages = queryClient.getQueryData<ChatMessage[]>(['messages', conversationId])
       setMessages(prev => prev.filter(m => m.id !== msgId))
+
+      const { error } = await supabase.from('messages').delete().eq('id', msgId)
+      if (error) {
+        if (previousMessages) setMessages(previousMessages)
+        throw error
+      }
     },
     updateMessage: async (msgId: string, content: string) => {
-      const { error } = await (supabase.from('messages') as any).update({ content }).eq('id', msgId)
-      if (error) throw error
+      const previousMessages = queryClient.getQueryData<ChatMessage[]>(['messages', conversationId])
       setMessages(prev => prev.map(m => m.id === msgId ? { ...m, content } : m))
+
+      const { error } = await (supabase.from('messages') as any).update({ content }).eq('id', msgId)
+      if (error) {
+        if (previousMessages) setMessages(previousMessages)
+        throw error
+      }
     },
     updateConversationModel: async (convId: string, modelId: string) => {
       try {
@@ -341,7 +351,6 @@ export function useChat(conversationId?: string) {
         queryClient.invalidateQueries({ queryKey: ['conversations'] })
       } catch (err) {
         logger.warn('Failed to sync model to database, using local state fallback:', err)
-        // Fallback to local state if DB update fails
         setConversationModel(convId, modelId)
       }
     },
@@ -351,30 +360,22 @@ export function useChat(conversationId?: string) {
       queryClient.invalidateQueries({ queryKey: ['conversations'] })
     },
     regenerateMessage: async (msgId: string, charId: string) => {
-      // 1. Find message index
       const msgIndex = messages.findIndex(m => m.id === msgId)
       if (msgIndex === -1) return
 
-      // 2. All IDs from this message onwards
       const idsToDelete = messages.slice(msgIndex).map(m => m.id)
       
-      // 3. Delete from DB
       const { error } = await supabase.from('messages').delete().in('id', idsToDelete)
       if (error) throw error
       
-      // 4. Update UI
       setMessages(prev => prev.slice(0, msgIndex))
       
-      // 5. Trigger new generation for the remaining context
-      // The content used for the AI will be the last remaining user message
       const remainingMsgs = messages.slice(0, msgIndex)
       const lastUserMsg = [...remainingMsgs].reverse().find(m => m.role === 'user')
       
       if (lastUserMsg) {
-        // We use the last user message to "prompt" the AI again
         await sendMessage(lastUserMsg.content, charId, true)
       } else {
-        // Fallback: Continue with empty content (should be handled by edge function)
         await sendMessage('', charId, true)
       }
     },
@@ -385,10 +386,14 @@ export function useChat(conversationId?: string) {
       const idsToDelete = messages.slice(msgIndex + 1).map(m => m.id)
       if (idsToDelete.length === 0) return
 
-      const { error } = await (supabase.from('messages') as any).delete().in('id', idsToDelete)
-      if (error) throw error
-      
+      const previousMessages = queryClient.getQueryData<ChatMessage[]>(['messages', conversationId])
       setMessages(prev => prev.slice(0, msgIndex + 1))
+
+      const { error } = await (supabase.from('messages') as any).delete().in('id', idsToDelete)
+      if (error) {
+        if (previousMessages) setMessages(previousMessages)
+        throw error
+      }
     },
     getSuggestions: async (charId: string): Promise<string[]> => {
       if (!conversationId) return []

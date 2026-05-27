@@ -1,20 +1,21 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { useEffect, lazy, Suspense } from 'react'
 import { ModalProvider } from '@/components/ModalProvider'
 import { useAuth } from '@/contexts/AuthContext'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { useUIStore } from '@/stores/uiStore'
 import { MobileNav, DesktopNav } from '@/components/NavBar'
-import AuthPage from '@/pages/Auth'
-import LobbyPage from '@/pages/Lobby'
-import ChatPage from '@/pages/Chat'
-import ChatRoomPage from '@/pages/ChatRoom'
-import CreatePage from '@/pages/Create'
-import ProfilePage from '@/pages/Profile'
-import AdminPage from '@/pages/Admin'
 import { Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+
+const AuthPage = lazy(() => import('@/pages/Auth'))
+const LobbyPage = lazy(() => import('@/pages/Lobby'))
+const ChatPage = lazy(() => import('@/pages/Chat'))
+const ChatRoomPage = lazy(() => import('@/pages/ChatRoom'))
+const CreatePage = lazy(() => import('@/pages/Create'))
+const ProfilePage = lazy(() => import('@/pages/Profile'))
+const AdminPage = lazy(() => import('@/pages/Admin'))
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -90,34 +91,40 @@ function AppLayout() {
         "min-h-dvh transition-all duration-300",
         !isRoom && "lg:ml-[80px] pb-20 lg:pb-0"
       )}>
-        <Routes>
-          <Route path="/" element={<LobbyPage />} />
-          <Route path="/auth" element={
-            isAuthenticated ? <Navigate to="/" replace /> : <AuthPage />
-          } />
-          <Route path="/chat" element={
-            <ProtectedRoute><ChatPage /></ProtectedRoute>
-          } />
-          <Route path="/chat/:conversationId" element={
-            <ProtectedRoute><ChatPage /></ProtectedRoute>
-          } />
-          <Route path="/room/:conversationId" element={
-            <ProtectedRoute><ChatRoomPage /></ProtectedRoute>
-          } />
-          <Route path="/create" element={
-            <ProtectedRoute><CreatePage /></ProtectedRoute>
-          } />
-          <Route path="/create/:id" element={
-            <ProtectedRoute><CreatePage /></ProtectedRoute>
-          } />
-          <Route path="/profile" element={
-            <ProtectedRoute><ProfilePage /></ProtectedRoute>
-          } />
-          <Route path="/admin" element={
-            <ProtectedRoute><AdminPage /></ProtectedRoute>
-          } />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <Suspense fallback={
+          <div className="min-h-dvh flex items-center justify-center bg-background">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        }>
+          <Routes>
+            <Route path="/" element={<LobbyPage />} />
+            <Route path="/auth" element={
+              isAuthenticated ? <Navigate to="/" replace /> : <AuthPage />
+            } />
+            <Route path="/chat" element={
+              <ProtectedRoute><ChatPage /></ProtectedRoute>
+            } />
+            <Route path="/chat/:conversationId" element={
+              <ProtectedRoute><ChatPage /></ProtectedRoute>
+            } />
+            <Route path="/room/:conversationId" element={
+              <ProtectedRoute><ChatRoomPage /></ProtectedRoute>
+            } />
+            <Route path="/create" element={
+              <ProtectedRoute><CreatePage /></ProtectedRoute>
+            } />
+            <Route path="/create/:id" element={
+              <ProtectedRoute><CreatePage /></ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute><ProfilePage /></ProtectedRoute>
+            } />
+            <Route path="/admin" element={
+              <ProtectedRoute><AdminPage /></ProtectedRoute>
+            } />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
       </main>
     </div>
   )
