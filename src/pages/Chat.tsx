@@ -164,16 +164,16 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex h-dvh bg-background overflow-hidden">
+    <div className="flex h-dvh w-screen bg-background overflow-hidden fixed inset-0">
       {/* ── 左欄/手機全屏：列表區域 ── */}
       <div 
         className={cn(
-          "w-full lg:w-80 lg:min-w-[320px] flex flex-col border-r border-border bg-background relative",
+          "w-full lg:w-80 lg:min-w-[320px] flex flex-col border-r border-border bg-background relative h-full overflow-hidden",
           conversationId ? 'hidden lg:flex' : 'flex'
         )}
       >
         {/* 頂部頁籤切換 */}
-        <div className="pt-6 px-4 bg-background/80 backdrop-blur-xl sticky top-0 z-20 pb-4">
+        <div className="pt-6 px-4 bg-background pb-4 shrink-0">
           <div className="flex glass-pill p-1 rounded-2xl mb-2">
             <button
               onClick={() => setActiveTab('chat')}

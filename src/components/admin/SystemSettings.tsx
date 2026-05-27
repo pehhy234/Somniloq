@@ -42,9 +42,9 @@ export function SystemSettings({
         <p className="text-[11px] text-muted-foreground/50 mt-1 font-medium">配置全站 AI 設定與預設行為</p>
       </div>
       
-      <div className="md:glass-md p-6 rounded-[28px] border border-border space-y-6 max-w-2xl">
+      <div className="glass-md md:glass-md p-4 sm:p-6 rounded-[24px] sm:rounded-[28px] border border-border space-y-6 max-w-full md:max-w-2xl">
         {/* Default Chat Model */}
-        <div className="space-y-4 pb-6 border-b border-white/5 pl-4 border-l-2 border-l-primary/40">
+        <div className="space-y-4 pb-6 border-b border-white/5 pl-3 sm:pl-4 border-l-2 border-l-primary/40">
           <div>
             <h3 className="text-sm font-black text-foreground">【聊天室首推】預設對話模型</h3>
             <p className="text-xs text-muted-foreground leading-relaxed mt-1.5">
@@ -105,7 +105,7 @@ export function SystemSettings({
         </div>
 
         {/* Suggestion Model */}
-        <div className="space-y-4 pl-4 border-l-2 border-l-primary/40">
+        <div className="space-y-4 pl-3 sm:pl-4 border-l-2 border-l-primary/40">
           <div>
             <h3 className="text-sm font-black text-foreground">【聊天室燈泡】AI 建議模型</h3>
             <p className="text-xs text-muted-foreground leading-relaxed mt-1.5">

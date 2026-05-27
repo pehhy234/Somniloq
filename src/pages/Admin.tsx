@@ -80,58 +80,58 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto py-10 px-6 h-full">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-6 border-b border-border">
+    <div className="max-w-6xl mx-auto py-6 md:py-10 px-4 md:px-6 pb-24 md:pb-6 h-full">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6 mb-6 md:mb-10 pb-6 border-b border-border">
         <div className="flex items-center gap-4">
           <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20 shadow-inner">
             <Shield className="w-8 h-8 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-black tracking-tight">System Admin</h1>
-            <p className="text-[11px] text-muted-foreground/50 font-medium uppercase tracking-widest mt-0.5">Administration Panel</p>
+            <h1 className="text-xl md:text-2xl font-black tracking-tight">System Admin</h1>
+            <p className="text-[10px] md:text-[11px] text-muted-foreground/50 font-medium uppercase tracking-widest mt-0.5">Administration Panel</p>
           </div>
         </div>
         
-        {/* Tabs */}
-        <div className="flex bg-muted p-1 rounded-2xl border border-border shadow-inner">
+        {/* Tabs - Mobile horizontal scrollable container */}
+        <div className="flex bg-muted p-1 rounded-2xl border border-border shadow-inner overflow-x-auto hide-scrollbar max-w-full shrink-0 gap-1 scroll-smooth">
           <button
             onClick={() => setActiveTab('users')}
             className={cn(
-              "flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-all",
+              "flex items-center gap-2 px-4 md:px-5 py-2 rounded-xl text-xs md:text-sm font-semibold transition-all shrink-0",
               activeTab === 'users' ? "bg-card text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <Users className="w-4 h-4" />
+            <Users className="w-4 h-4 shrink-0" />
             Users
           </button>
           <button
             onClick={() => setActiveTab('models')}
             className={cn(
-              "flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-all",
+              "flex items-center gap-2 px-4 md:px-5 py-2 rounded-xl text-xs md:text-sm font-semibold transition-all shrink-0",
               activeTab === 'models' ? "bg-card text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <Database className="w-4 h-4" />
+            <Database className="w-4 h-4 shrink-0" />
             Models
           </button>
           <button
             onClick={() => setActiveTab('invites')}
             className={cn(
-              "flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-all",
+              "flex items-center gap-2 px-4 md:px-5 py-2 rounded-xl text-xs md:text-sm font-semibold transition-all shrink-0",
               activeTab === 'invites' ? "bg-card text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <Ticket className="w-4 h-4" />
+            <Ticket className="w-4 h-4 shrink-0" />
             Invites
           </button>
           <button
             onClick={() => setActiveTab('settings')}
             className={cn(
-              "flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-all",
+              "flex items-center gap-2 px-4 md:px-5 py-2 rounded-xl text-xs md:text-sm font-semibold transition-all shrink-0",
               activeTab === 'settings' ? "bg-card text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <Settings className="w-4 h-4" />
+            <Settings className="w-4 h-4 shrink-0" />
             Settings
           </button>
         </div>
