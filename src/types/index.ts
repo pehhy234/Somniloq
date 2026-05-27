@@ -47,6 +47,7 @@ export interface Database {
           avatar_url: string | null
           tags: string[]
           is_public: boolean
+          gender: string | null
           created_at: string
           updated_at: string
         }
@@ -60,6 +61,7 @@ export interface Database {
           avatar_url?: string | null
           tags?: string[]
           is_public?: boolean
+          gender?: string | null
         }
         Update: {
           name?: string
@@ -69,6 +71,7 @@ export interface Database {
           avatar_url?: string | null
           tags?: string[]
           is_public?: boolean
+          gender?: string | null
         }
       }
       conversations: {

@@ -16,6 +16,7 @@ interface CharacterForm {
   prompt: string
   tags: string[]
   is_public: boolean
+  gender: string  // 'female' | 'male' | 'other' | ''
 }
 
 const INITIAL_FORM: CharacterForm = {
@@ -25,6 +26,7 @@ const INITIAL_FORM: CharacterForm = {
   prompt: '',
   tags: [],
   is_public: false,
+  gender: '',
 }
 
 export default function CreatePage() {
@@ -87,6 +89,7 @@ export default function CreatePage() {
         prompt: existingData.prompt || '',
         tags: existingData.tags || [],
         is_public: existingData.is_public ?? false,
+        gender: existingData.gender || '',
       })
       if (existingData.avatar_url) setAvatarPreview(existingData.avatar_url)
     } else if (!id) {
@@ -191,6 +194,7 @@ export default function CreatePage() {
       try {
         if (!user) throw new Error('請先登入')
         if (!form.name.trim()) throw new Error('請輸入角色名稱')
+        if (!form.greeting.trim()) throw new Error('請填寫角色問候語')
         if (!form.prompt.trim()) throw new Error('請填寫核心設定 (Prompt)')
 
         // If editing, NOT the author, and NOT an admin, prevent saving
@@ -223,6 +227,7 @@ export default function CreatePage() {
           prompt:      form.prompt.trim().slice(0, 20000),
           tags:        form.tags.slice(0, 20),  // max 20 tags
           is_public:   form.is_public,
+          gender:      form.gender || null,
           avatar_url,
         }
 
@@ -305,6 +310,7 @@ export default function CreatePage() {
       prompt: draft.prompt || '',
       tags: draft.tags || [],
       is_public: draft.is_public ?? false,
+      gender: draft.gender || '',
     })
     setActiveDraftId(draft.id)
     if (draft.avatar_url) {
@@ -386,6 +392,7 @@ export default function CreatePage() {
         prompt: form.prompt.trim(),
         tags: form.tags,
         is_public: form.is_public,
+        gender: form.gender || null,
         avatar_url,
         updated_at: new Date().toISOString()
       }
@@ -612,6 +619,35 @@ export default function CreatePage() {
               </div>
             </div>
 
+            {/* Gender Select dropdown */}
+            <div className="rounded-2xl p-4 border border-border bg-muted/50 flex flex-col gap-2">
+              <div>
+                <p className="text-sm font-bold text-foreground">角色性別</p>
+                <p className="text-[11px] text-muted-foreground/60 mt-0.5 leading-snug">幫助 AI 更好地在對話中使用正確的人稱代詞</p>
+              </div>
+              <div className="relative">
+                <select
+                  id="create-gender"
+                  value={form.gender}
+                  onChange={(e) => set('gender', e.target.value)}
+                  className={cn(
+                    inputClass,
+                    "w-full pr-10 cursor-pointer appearance-none bg-muted/70 hover:bg-muted/95 border-border focus:border-primary/40 focus:ring-2 focus:ring-primary/10 transition-all duration-300 rounded-xl"
+                  )}
+                >
+                  <option value="" className="bg-background text-foreground">✨ 保持神秘 (不指定)</option>
+                  <option value="female" className="bg-background text-foreground">♀️ 女性 (Female)</option>
+                  <option value="male" className="bg-background text-foreground">♂️ 男性 (Male)</option>
+                  <option value="other" className="bg-background text-foreground">🌌 奇幻 / 非人類 (Other)</option>
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-muted-foreground/50">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
           </div>
 
           {/* ── RIGHT COLUMN: text fields ── */}
@@ -690,7 +726,9 @@ export default function CreatePage() {
 
               {/* Greeting */}
               <div className="flex flex-col">
-                <label className={labelClass}>角色問候語</label>
+                <label className={labelRequiredClass}>
+                  角色問候語 <span className="text-primary normal-case tracking-normal font-black">*</span>
+                </label>
                 <textarea
                   id="create-greeting"
                   value={form.greeting}
