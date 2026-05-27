@@ -8,12 +8,15 @@ import { cn } from '@/lib/utils'
 import type { CharacterWithAuthor } from '@/types'
 import { useAuth } from '@/hooks/useAuth'
 import { logger } from '@/lib/logger'
+import { InviteActivationModal } from '@/components/InviteActivationModal'
+import { AlertCircle } from 'lucide-react'
 
 export default function LobbyPage() {
   const navigate = useNavigate()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isActive, refreshProfile } = useAuth()
   const { startConversation } = useChat()
 
+  const [showActivateModal, setShowActivateModal] = useState(false)
   const [search, setSearch] = useState('')
   const [searchInput, setSearchInput] = useState('')
   const [selectedTags, setSelectedTags] = useState<string[]>([])
@@ -60,6 +63,11 @@ export default function LobbyPage() {
       return
     }
 
+    if (!isActive) {
+      setShowActivateModal(true)
+      return
+    }
+
     // Navigate helper
     const navigateToChat = (id: string) => {
       const isMobile = window.innerWidth < 1024;
@@ -77,6 +85,23 @@ export default function LobbyPage() {
 
   return (
     <div className="min-h-dvh bg-background">
+      {/* ── Pending Activation Alert Banner ── */}
+      {isAuthenticated === true && isActive === false && (
+        <div 
+          onClick={() => setShowActivateModal(true)}
+          className={cn(
+            "bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-purple-500/10",
+            "border-b border-purple-500/20 text-purple-300 text-xs md:text-sm font-semibold",
+            "px-4 py-3 flex items-center justify-center gap-2 cursor-pointer hover:bg-white/5 transition-all text-center",
+            "relative overflow-hidden group"
+          )}
+        >
+          <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-purple-500/50 to-transparent animate-pulse" />
+          <AlertCircle className="w-4 h-4 text-purple-400 shrink-0 group-hover:scale-110 transition-transform" />
+          <span>您的帳號尚未啟用，無法使用聊天室。<span className="underline text-purple-400 group-hover:text-purple-300 font-bold ml-1">點此輸入邀請碼立即解鎖</span> 或靜候管理員審核。</span>
+        </div>
+      )}
+
       {/* ── Top search area ── */}
       <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-3xl border-b border-border shadow-sm px-4 md:px-8 pt-3 md:pt-5 pb-3 md:pb-5">
         <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-8">
@@ -223,6 +248,14 @@ export default function LobbyPage() {
           </>
         )}
       </div>
+      {/* ── Activation Modal ── */}
+      <InviteActivationModal
+        isOpen={showActivateModal}
+        onClose={() => setShowActivateModal(false)}
+        onSuccess={() => {
+          refreshProfile()
+        }}
+      />
     </div>
   )
 }

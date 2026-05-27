@@ -6,8 +6,9 @@ import {
   ChevronDown,
   Play, X, Menu,
   RotateCcw, PenLine, Copy,
-  ChevronsUp, ChevronsDown, Square
+  ChevronsUp, ChevronsDown, Square, ShieldAlert
 } from 'lucide-react'
+import { InviteActivationModal } from '@/components/InviteActivationModal'
 import { useChat, ChatMessage } from '@/hooks/useChat'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/lib/utils'
@@ -29,7 +30,7 @@ interface ChatRoomContentProps {
 export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRoomContentProps) {
   const navigate = useNavigate()
   const modal = useModalStore()
-  const { user, isActive } = useAuth()
+  const { user, isActive, refreshProfile } = useAuth()
   const {
     messages, isMessagesLoading, isTyping,
     sendMessage, conversations, deleteMessage, updateMessage, regenerateMessage, getSuggestions,
@@ -37,6 +38,7 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
   } = useChat(conversationId)
 
   const currentConv = conversations.find(c => c.id === conversationId)
+  const [showActivateModal, setShowActivateModal] = useState(false)
   const [input, setInput] = useState('')
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [isSuggesting, setIsSuggesting] = useState(false)
@@ -192,6 +194,48 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
     }
     setContextMenu({ x, y, msg })
     setActiveMenuId(msg.id)
+  }
+
+  if (!isActive) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center p-4 relative overflow-hidden bg-black text-center space-y-6">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] h-[320px] rounded-full bg-primary/10 blur-[80px] pointer-events-none" />
+        
+        <div className="w-full max-w-[360px] bg-zinc-900/50 backdrop-blur-3xl rounded-[28px] border border-white/10 shadow-2xl p-6 relative z-10 space-y-5">
+          <div className="w-12 h-12 rounded-xl bg-primary/15 border border-primary/20 flex items-center justify-center mx-auto text-primary">
+            <ShieldAlert className="w-6 h-6" />
+          </div>
+          
+          <div className="space-y-1.5">
+            <h2 className="text-base font-black tracking-tight text-white">帳號尚未啟用</h2>
+            <p className="text-white/40 text-xs leading-relaxed">
+              聊天功能僅開放給已啟用的帳號。輸入邀請碼可直接解鎖，或等待管理員核准啟用。
+            </p>
+          </div>
+          
+          <div className="flex flex-col gap-2 pt-1">
+            <button 
+              onClick={() => setShowActivateModal(true)}
+              className="w-full py-3 rounded-full text-xs font-bold text-white shadow-lg shadow-primary/20 hover:brightness-110 active:scale-[0.98] transition-all bg-primary"
+            >
+              輸入邀請碼立即啟用
+            </button>
+            <button 
+              onClick={() => navigate('/chat')}
+              className="w-full py-2.5 rounded-full text-xs font-bold bg-white/5 border border-white/10 text-white/55 hover:bg-white/10 hover:text-white transition-all active:scale-[0.98]"
+            >
+              返回列表
+            </button>
+          </div>
+        </div>
+
+        <InviteActivationModal
+          isOpen={showActivateModal}
+          onClose={() => setShowActivateModal(false)}
+          onSuccess={refreshProfile}
+        />
+      </div>
+    )
   }
 
   if (!currentConv || isMessagesLoading) {
@@ -598,6 +642,12 @@ export function ChatRoomContent({ conversationId, isMobilePage = false }: ChatRo
           </div>
         </div>
       </div>
+      {/* ── Activation Modal ── */}
+      <InviteActivationModal
+        isOpen={showActivateModal}
+        onClose={() => setShowActivateModal(false)}
+        onSuccess={refreshProfile}
+      />
     </div>
   )
 }

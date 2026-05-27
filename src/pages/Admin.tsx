@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Shield, Loader2, Users, Database, Settings } from 'lucide-react'
+import { Shield, Loader2, Users, Database, Settings, Ticket } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAdminState } from '@/hooks/useAdminState'
 import { UserManagement } from '@/components/admin/UserManagement'
@@ -7,6 +7,7 @@ import { ModelManagement } from '@/components/admin/ModelManagement'
 import { SystemSettings } from '@/components/admin/SystemSettings'
 import { EditModelModal } from '@/components/admin/EditModelModal'
 import { ProviderManagementModal } from '@/components/admin/ProviderManagementModal'
+import { InviteManagement } from '@/components/admin/InviteManagement'
 
 export default function AdminPage() {
   const {
@@ -50,7 +51,11 @@ export default function AdminPage() {
     handleSaveSettings,
     handleSaveDefaultChatModel,
     providers,
-    saveProviders
+    saveProviders,
+    inviteCodes,
+    createInviteCode,
+    toggleInviteCodeActive,
+    deleteInviteCode
   } = useAdminState()
 
   const [showProvidersModal, setShowProvidersModal] = useState(false)
@@ -110,6 +115,16 @@ export default function AdminPage() {
             Models
           </button>
           <button
+            onClick={() => setActiveTab('invites')}
+            className={cn(
+              "flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-all",
+              activeTab === 'invites' ? "bg-card text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Ticket className="w-4 h-4" />
+            Invites
+          </button>
+          <button
             onClick={() => setActiveTab('settings')}
             className={cn(
               "flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-all",
@@ -158,6 +173,13 @@ export default function AdminPage() {
             setIsEditingModel={setIsEditingModel}
             setEditForm={setEditForm}
             onManageProviders={() => setShowProvidersModal(true)}
+          />
+        ) : activeTab === 'invites' ? (
+          <InviteManagement
+            inviteCodes={inviteCodes}
+            createInviteCode={createInviteCode}
+            toggleInviteCodeActive={toggleInviteCodeActive}
+            deleteInviteCode={deleteInviteCode}
           />
         ) : (
           <SystemSettings

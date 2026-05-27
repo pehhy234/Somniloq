@@ -9,7 +9,7 @@ export function useAdminState() {
   const { isAdmin } = useAuth()
   const modal = useModalStore()
   
-  const [activeTab, setActiveTab] = useState<'users' | 'models' | 'settings'>('users')
+  const [activeTab, setActiveTab] = useState<'users' | 'models' | 'settings' | 'invites'>('users')
   
   // User Management State
   const [profiles, setProfiles] = useState<Profile[]>([])
@@ -39,6 +39,9 @@ export function useAdminState() {
   const [error, setError] = useState<string | null>(null)
   const [providers, setProviders] = useState<any[]>([])
 
+  // Invite Codes State
+  const [inviteCodes, setInviteCodes] = useState<any[]>([])
+
   useEffect(() => {
     if (!isAdmin) return
     if (activeTab === 'users') {
@@ -49,6 +52,8 @@ export function useAdminState() {
     } else if (activeTab === 'settings') {
       loadModels()
       loadSettings()
+    } else if (activeTab === 'invites') {
+      loadInviteCodes()
     }
   }, [isAdmin, activeTab])
 
@@ -230,6 +235,80 @@ export function useAdminState() {
     }
   }
 
+  // Invite Codes management functions
+  const loadInviteCodes = async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const { data, error: err } = await (supabase
+        .from('invite_codes') as any)
+        .select('*')
+        .order('created_at', { ascending: false })
+      if (err) throw err
+      setInviteCodes(data || [])
+    } catch (err: any) {
+      logger.error('Failed to load invite codes:', err)
+      setError(err.message)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const createInviteCode = async (payload: { code: string, max_uses: number, expires_at: string | null }) => {
+    try {
+      const { data, error: err } = await (supabase
+        .from('invite_codes') as any)
+        .insert({
+          code: payload.code.trim(),
+          max_uses: payload.max_uses,
+          expires_at: payload.expires_at ? new Date(payload.expires_at).toISOString() : null,
+          uses_count: 0,
+          is_active: true
+        })
+        .select()
+        .single()
+      if (err) throw err
+      setInviteCodes(prev => [data, ...prev])
+      return true
+    } catch (err: any) {
+      modal.alert(`建立邀請碼失敗: ${err.message}`, { title: '系統錯誤' })
+      return false
+    }
+  }
+
+  const toggleInviteCodeActive = async (code: string, currentStatus: boolean) => {
+    try {
+      const { error: err } = await (supabase
+        .from('invite_codes') as any)
+        .update({ is_active: !currentStatus })
+        .eq('code', code)
+      if (err) throw err
+      setInviteCodes(prev => prev.map(c => c.code === code ? { ...c, is_active: !currentStatus } : c))
+    } catch (err: any) {
+      modal.alert(`更新狀態失敗: ${err.message}`, { title: '系統錯誤' })
+    }
+  }
+
+  const deleteInviteCode = async (code: string) => {
+    modal.confirm(`確定要刪除邀請碼「${code}」嗎？`, {
+      title: '刪除確認',
+      confirmText: '確定刪除',
+      destructive: true,
+      onConfirm: async () => {
+        try {
+          const { error: err } = await (supabase
+            .from('invite_codes') as any)
+            .delete()
+            .eq('code', code)
+          if (err) throw err
+          setInviteCodes(prev => prev.filter(c => c.code !== code))
+        } catch (err: any) {
+          modal.alert(`刪除失敗: ${err.message}`, { title: '系統錯誤' })
+        }
+      }
+    })
+  }
+
   const deleteModel = async (id: string) => {
     modal.confirm('確定要刪除此模型嗎？', {
       title: '刪除確認',
@@ -339,6 +418,11 @@ export function useAdminState() {
     handleSaveSettings,
     handleSaveDefaultChatModel,
     providers,
-    saveProviders
+    saveProviders,
+    inviteCodes,
+    loadInviteCodes,
+    createInviteCode,
+    toggleInviteCodeActive,
+    deleteInviteCode
   }
 }

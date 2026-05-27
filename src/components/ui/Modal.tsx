@@ -1,5 +1,6 @@
 import * as React from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
+import { createPortal } from "react-dom"
 import { X } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -7,7 +8,10 @@ const Modal = DialogPrimitive.Root
 
 const ModalTrigger = DialogPrimitive.Trigger
 
-const ModalPortal = DialogPrimitive.Portal
+const ModalPortal = ({ children }: { children: React.ReactNode }) => {
+  if (typeof window === "undefined") return null
+  return createPortal(children, document.body)
+}
 
 const ModalClose = DialogPrimitive.Close
 
@@ -18,7 +22,7 @@ const ModalOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-[200]",
+      "fixed inset-0 z-[998]",
       "bg-[hsl(224,71%,2%)]/70 backdrop-blur-md",
       "data-[state=open]:animate-in data-[state=closed]:animate-out",
       "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
@@ -37,12 +41,11 @@ const ModalContent = React.forwardRef<
     <ModalOverlay />
     <DialogPrimitive.Content
       ref={ref}
-      className={cn(
+        className={cn(
         // Position & size
-        "fixed left-[50%] top-[50%] z-[201] w-full max-w-sm",
-        "translate-x-[-50%] translate-y-[-50%]",
+        "fixed z-[999] w-full max-w-sm",
         // Glassmorphism card — matches auth card style
-        "relative overflow-hidden",
+        "overflow-hidden",
         "bg-[hsl(224,71%,4%)]/80 backdrop-blur-3xl",
         "border border-white/10",
         "rounded-[28px] p-6",
@@ -53,10 +56,14 @@ const ModalContent = React.forwardRef<
         "data-[state=open]:animate-in data-[state=closed]:animate-out",
         "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
         "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
-        "data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%]",
-        "data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]",
         className
       )}
+      style={{
+        left: '50%',
+        top: '50%',
+        transform: 'translate(-50%, -50%)',
+        margin: 0
+      }}
       {...props}
     >
       {/* Inner gradient overlay */}

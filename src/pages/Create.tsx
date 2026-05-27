@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
-import { X, Loader2, RefreshCw, Sparkles, ImagePlus } from 'lucide-react'
+import { X, Loader2, RefreshCw, Sparkles, ImagePlus, ShieldAlert } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 import { useModalStore } from '@/stores/modalStore'
 import { compressImage } from '@/lib/image'
+import { InviteActivationModal } from '@/components/InviteActivationModal'
 
 interface CharacterForm {
   name: string
@@ -31,9 +32,10 @@ export default function CreatePage() {
   const navigate = useNavigate()
   const modal = useModalStore()
   const queryClient = useQueryClient()
-  const { user } = useAuth()
+  const { user, isActive, refreshProfile } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const [showActivateModal, setShowActivateModal] = useState(false)
   const [form, setForm] = useState<CharacterForm>(INITIAL_FORM)
   const [tagInput, setTagInput] = useState('')
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
@@ -266,6 +268,53 @@ export default function CreatePage() {
   // Required fields get stronger label color; optional fields stay muted
   const labelClass = 'block text-xs font-bold text-muted-foreground/60 uppercase tracking-widest mb-2'
   const labelRequiredClass = 'block text-xs font-bold text-foreground/80 uppercase tracking-widest mb-2'
+
+  if (!isActive) {
+    return (
+      <div className="min-h-dvh flex flex-col items-center justify-center p-4 relative overflow-hidden" style={{ background: 'radial-gradient(ellipse 80% 50% at 50% -10%, hsl(267 100% 72% / 0.08) 0%, transparent 70%), hsl(var(--background))' }}>
+        {/* Background decoration */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-primary/5 blur-[100px] pointer-events-none" />
+        
+        <div className="w-full max-w-[420px] bg-card/60 backdrop-blur-3xl rounded-[28px] border border-white/10 shadow-[0_32px_80px_rgba(0,0,0,0.35)] p-8 text-center space-y-6 relative z-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-transparent to-transparent pointer-events-none rounded-[28px]" />
+          
+          <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto shadow-lg">
+            <ShieldAlert className="w-8 h-8 text-primary" />
+          </div>
+          
+          <div className="space-y-2">
+            <h2 className="text-xl font-black tracking-tight">帳號尚未啟用</h2>
+            <p className="text-muted-foreground text-xs leading-relaxed">
+              很抱歉，創造 AI 角色與聊天功能僅開放給已啟用的帳號。<br/>
+              您可以立刻輸入邀請碼解鎖全站功能，或靜候管理員審核。
+            </p>
+          </div>
+          
+          <div className="flex flex-col gap-2 pt-2">
+            <button 
+              onClick={() => setShowActivateModal(true)}
+              className="w-full py-3.5 rounded-full text-xs font-black text-white shadow-lg shadow-primary/20 hover:brightness-110 active:scale-[0.98] transition-all"
+              style={{ background: 'linear-gradient(135deg, hsl(267, 70%, 42%), hsl(244, 60%, 38%))' }}
+            >
+              輸入邀請碼立即啟用
+            </button>
+            <button 
+              onClick={() => navigate('/')}
+              className="w-full py-3 rounded-full text-xs font-bold bg-white/5 border border-white/10 text-muted-foreground hover:bg-white/10 hover:text-foreground transition-all active:scale-[0.98]"
+            >
+              返回大廳
+            </button>
+          </div>
+        </div>
+
+        <InviteActivationModal
+          isOpen={showActivateModal}
+          onClose={() => setShowActivateModal(false)}
+          onSuccess={refreshProfile}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-dvh bg-background" style={{ background: 'radial-gradient(ellipse 80% 50% at 50% -10%, hsl(267 100% 72% / 0.06) 0%, transparent 70%), hsl(var(--background))' }}>
@@ -597,6 +646,12 @@ export default function CreatePage() {
           </div>
         </div>
       </div>
+      {/* ── Activation Modal ── */}
+      <InviteActivationModal
+        isOpen={showActivateModal}
+        onClose={() => setShowActivateModal(false)}
+        onSuccess={refreshProfile}
+      />
     </div>
   )
 }
