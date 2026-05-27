@@ -1,5 +1,7 @@
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { MessageCircle, Trash2, ChevronRight } from 'lucide-react'
+import { MessageCircle, Trash2, Edit2 } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
+import { useQueryClient } from '@tanstack/react-query'
 import { useState, useEffect } from 'react'
 import { useChat } from '@/hooks/useChat'
 import { useCharacters } from '@/hooks/useCharacters'
@@ -16,6 +18,7 @@ type TabType = 'chat' | 'character'
 export default function ChatPage() {
   const { conversationId } = useParams<{ conversationId?: string }>()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { user, isActive, refreshProfile } = useAuth()
   const { 
     conversations, 
@@ -81,6 +84,34 @@ export default function ChatPage() {
       onConfirm: async () => {
         await deleteConversation(id)
         setSwipedId(null)
+      }
+    })
+  }
+
+  const handleDeleteCharacter = async (e: React.MouseEvent, charId: string, charName: string, avatarUrl: string | null) => {
+    e.stopPropagation()
+    modal.confirm(`確定要永久刪除角色「${charName}」嗎？此動作將連同所有對話紀錄一併刪除，且無法復原。`, {
+      title: '刪除角色確認',
+      confirmText: '確定刪除',
+      destructive: true,
+      onConfirm: async () => {
+        try {
+          const { error } = await supabase.from('characters').delete().eq('id', charId)
+          if (error) throw error
+
+          if (avatarUrl) {
+            const path = avatarUrl.split('/avatars/').pop()
+            if (path) {
+              await supabase.storage.from('avatars').remove([path])
+            }
+          }
+
+          modal.alert('角色已成功刪除。', { title: '刪除成功' })
+          queryClient.invalidateQueries({ queryKey: ['characters'] })
+          queryClient.invalidateQueries({ queryKey: ['conversations'] })
+        } catch (err: any) {
+          modal.alert(`刪除角色失敗: ${err.message || '未知錯誤'}`, { title: '刪除失敗' })
+        }
       }
     })
   }
@@ -262,8 +293,10 @@ export default function ChatPage() {
               <EmptyState title="尚未創造角色" sub="現在就去創造一個屬於你的角色吧！" />
             ) : (
               myCharacters.map((char) => (
-                <button
+                <div
                   key={char.id}
+                  role="button"
+                  tabIndex={0}
                   onClick={async () => {
                     try {
                       const convId = await startConversation(char.id)
@@ -273,7 +306,7 @@ export default function ChatPage() {
                       logger.error('Chat start error:', e)
                     }
                   }}
-                  className="w-full flex items-center gap-4 p-4 mb-3 rounded-3xl border border-border hover:bg-muted/60 active:scale-[0.98] transition-all text-left shadow-sm group"
+                  className="w-full flex items-center gap-4 p-4 mb-3 rounded-3xl border border-border hover:bg-muted/60 active:scale-[0.98] transition-all text-left shadow-sm group relative cursor-pointer"
                 >
                   <div className="shrink-0 relative">
                     <img
@@ -281,16 +314,34 @@ export default function ChatPage() {
                       className="w-[56px] h-[56px] rounded-2xl object-cover border border-border shadow-sm bg-muted group-hover:scale-105 transition-transform duration-500"
                     />
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 pr-2">
                     <div className="flex items-center justify-between mb-1">
                       <h3 className="font-bold text-[16px] text-foreground truncate drop-shadow-sm">{char.name}</h3>
-                      <ChevronRight className="w-5 h-5 text-muted-foreground/50" />
                     </div>
                     <p className="text-[14px] text-muted-foreground truncate leading-snug font-medium">
                       {char.description}
                     </p>
                   </div>
-                </button>
+                  <div className="flex items-center gap-1.5 shrink-0 z-20">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        navigate(`/create/${char.id}`)
+                      }}
+                      className="p-2 rounded-xl bg-primary/10 text-primary hover:bg-primary hover:text-white transition-colors cursor-pointer"
+                      title="編輯角色"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={(e) => handleDeleteCharacter(e, char.id, char.name, char.avatar_url)}
+                      className="p-2 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-colors cursor-pointer"
+                      title="刪除角色"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
               ))
             )
           )}

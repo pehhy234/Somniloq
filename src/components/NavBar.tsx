@@ -52,7 +52,7 @@ export function MobileNav() {
               className={({ isActive }) =>
                 cn(
                   'flex flex-col items-center gap-0.5 py-2 px-3.5 rounded-2xl transition-all duration-300 relative z-10',
-                  isActive ? 'text-primary bg-primary/10 border border-primary/20 shadow-lg' : 'text-muted-foreground hover:text-foreground'
+                  isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
                 )
               }
             >
@@ -109,7 +109,7 @@ export function DesktopNav() {
                 cn(
                   'flex items-center gap-4 px-4 py-4 rounded-2xl transition-all duration-300 min-w-0 mx-2',
                   isActive
-                    ? 'glass-sm text-primary shadow-lg border border-primary/20'
+                    ? 'text-primary'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 )
               }
