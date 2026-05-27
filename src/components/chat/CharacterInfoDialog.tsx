@@ -4,6 +4,7 @@ import { X, PenLine, Upload } from 'lucide-react'
 import { ModelSwitcher } from '@/components/ModelSwitcher'
 import { useModalStore } from '@/stores/modalStore'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/hooks/useAuth'
 
 interface CharacterInfoDialogProps {
   infoMode: 'full' | 'simple'
@@ -35,6 +36,7 @@ export function CharacterInfoDialog({
 }: CharacterInfoDialogProps) {
   const navigate = useNavigate()
   const modal = useModalStore()
+  const { isAdmin } = useAuth()
 
   return createPortal(
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
@@ -77,11 +79,11 @@ export function CharacterInfoDialog({
             <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={() => {
-                  if (character.author_id === userId) {
+                  if (character.author_id === userId || isAdmin) {
                     onClose()
                     navigate(`/create/${character.id}`)
                   } else {
-                    modal.alert('您不是此角色的創作者，無法進行修改。', { title: '權限不足' })
+                    modal.alert('您不是此角色的創作者，且無管理員權限，無法進行修改。', { title: '權限不足' })
                   }
                 }}
                 className="flex flex-col items-center justify-center py-2.5 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-primary/10 transition-all active:scale-95 group"

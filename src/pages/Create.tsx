@@ -32,7 +32,7 @@ export default function CreatePage() {
   const navigate = useNavigate()
   const modal = useModalStore()
   const queryClient = useQueryClient()
-  const { user, isActive, refreshProfile } = useAuth()
+  const { user, isActive, refreshProfile, isAdmin } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [showActivateModal, setShowActivateModal] = useState(false)
@@ -193,9 +193,9 @@ export default function CreatePage() {
         if (!form.name.trim()) throw new Error('請輸入角色名稱')
         if (!form.prompt.trim()) throw new Error('請填寫核心設定 (Prompt)')
 
-        // If editing and NOT the author, prevent saving
-        if (id && existingData && existingData.author_id !== user.id) {
-          throw new Error('您不是此角色的作者，無法儲存變更')
+        // If editing, NOT the author, and NOT an admin, prevent saving
+        if (id && existingData && existingData.author_id !== user.id && !isAdmin) {
+          throw new Error('您不是此角色的作者，且無管理員權限，無法儲存變更')
         }
 
         let avatar_url = avatarPreview
@@ -216,7 +216,7 @@ export default function CreatePage() {
 
         // [Security] Explicit payload — max lengths enforced at DB layer too
         const safePayload = {
-          author_id:   user.id,
+          author_id:   id && existingData ? existingData.author_id : user.id,
           name:        form.name.trim().slice(0, 100),
           description: form.description.trim().slice(0, 500),
           greeting:    form.greeting.trim().slice(0, 2000),
