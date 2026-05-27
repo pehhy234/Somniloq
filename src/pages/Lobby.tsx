@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Sparkles, ArrowRight } from 'lucide-react'
+import { Sparkles, ArrowRight, AlertCircle, LogIn, User, Search } from 'lucide-react'
 import { useCharacters, useAllPublicTags } from '@/hooks/useCharacters'
 import { useChat } from '@/hooks/useChat'
 import { CharacterCard, CharacterCardSkeleton } from '@/components/CharacterCard'
@@ -9,11 +9,10 @@ import type { CharacterWithAuthor } from '@/types'
 import { useAuth } from '@/hooks/useAuth'
 import { logger } from '@/lib/logger'
 import { InviteActivationModal } from '@/components/InviteActivationModal'
-import { AlertCircle } from 'lucide-react'
 
 export default function LobbyPage() {
   const navigate = useNavigate()
-  const { isAuthenticated, isActive, refreshProfile } = useAuth()
+  const { isAuthenticated, isActive, refreshProfile, profile } = useAuth()
   const { startConversation } = useChat()
 
   const [showActivateModal, setShowActivateModal] = useState(false)
@@ -153,10 +152,6 @@ export default function LobbyPage() {
             </div>
 
             <form onSubmit={handleSearch} className="flex-1 relative group/search">
-              {/* Search Icon */}
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within/search:text-primary transition-colors duration-300">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-              </div>
               <input
                 id="lobby-search"
                 type="search"
@@ -170,6 +165,10 @@ export default function LobbyPage() {
                   'focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary focus:shadow-[0_0_35px_rgba(168,85,247,0.15)]'
                 )}
               />
+              {/* Search Icon */}
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10 text-primary/70 group-focus-within/search:text-primary pointer-events-none transition-all duration-300">
+                <Search className="w-4 h-4" strokeWidth={2.5} />
+              </div>
               <button
                 type="submit"
                 disabled={!searchInput.trim()}
@@ -183,6 +182,27 @@ export default function LobbyPage() {
                 <ArrowRight className="w-4 h-4" />
               </button>
             </form>
+
+            {/* Mobile Login / Profile Button */}
+            {!isAuthenticated ? (
+              <button
+                onClick={() => navigate('/auth')}
+                className="md:hidden flex items-center justify-center w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 text-primary active:scale-95 transition-all shadow-sm shrink-0 cursor-pointer"
+              >
+                <LogIn className="w-5 h-5" />
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate('/profile')}
+                className="md:hidden flex items-center justify-center w-10 h-10 rounded-2xl bg-muted border border-border overflow-hidden active:scale-95 transition-all shrink-0 cursor-pointer"
+              >
+                {profile?.avatar_url ? (
+                  <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <User className="w-5 h-5 text-muted-foreground" />
+                )}
+              </button>
+            )}
           </div>
 
           {/* Right: Tag list (Horizontal single row with mouse drag-to-scroll) */}

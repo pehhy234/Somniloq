@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom'
-import { MessageSquare, Compass, PlusCircle, User, Sparkles, Shield } from 'lucide-react'
+import { MessageSquare, Compass, PlusCircle, User, Sparkles, Shield, LogIn, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -42,12 +42,11 @@ export function MobileNav() {
       <div className="glass-pill flex items-center justify-around px-1.5 py-1.5 relative overflow-hidden rounded-[32px]">
         {/* Glow effect at the bottom of the pill */}
         <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-1/2 h-8 bg-primary/20 blur-xl rounded-full pointer-events-none" />
-        {navItems.map(({ to, icon: Icon, label, end, protected: isProtected }) => {
-          const dest = isProtected && !isAuthenticated && !isLoading ? '/auth' : to
+        {navItems.map(({ to, icon: Icon, label, end }) => {
           return (
             <NavLink
               key={to}
-              to={dest}
+              to={to}
               end={end}
               id={`mobile-nav-${label}`}
               className={({ isActive }) =>
@@ -76,7 +75,7 @@ export function MobileNav() {
 
 // ── Desktop side navigation ───────────────────────────────────
 export function DesktopNav() {
-  const { isAuthenticated, isLoading, isAdmin } = useAuth()
+  const { isAuthenticated, isLoading, isAdmin, user, profile, signOut } = useAuth()
   const location = useLocation()
   const navItems = getNavItems(isAdmin, true)
 
@@ -99,12 +98,11 @@ export function DesktopNav() {
 
       {/* Nav items */}
       <div className="flex flex-col gap-1 px-2 flex-1">
-        {navItems.map(({ to, icon: Icon, label, end, protected: isProtected }) => {
-          const dest = isProtected && !isAuthenticated && !isLoading ? '/auth' : to
+        {navItems.map(({ to, icon: Icon, label, end }) => {
           return (
             <NavLink
               key={to}
-              to={dest}
+              to={to}
               end={end}
               id={`desktop-nav-${label}`}
               className={({ isActive }) =>
@@ -130,6 +128,57 @@ export function DesktopNav() {
             </NavLink>
           )
         })}
+      </div>
+
+      {/* Desktop sidebar bottom auth area */}
+      <div className="mt-auto border-t border-border/60 py-4 flex flex-col items-center gap-2 shrink-0">
+        {!isLoading && (
+          isAuthenticated ? (
+            <div className="w-full flex flex-col gap-1">
+              {/* Profile info */}
+              <NavLink
+                to="/profile"
+                className="flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-300 min-w-0 mx-2 hover:bg-muted text-muted-foreground hover:text-foreground"
+              >
+                <div className="w-6 h-6 rounded-lg overflow-hidden shrink-0 bg-muted border border-border flex items-center justify-center shadow-inner">
+                  {profile?.avatar_url ? (
+                    <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="w-4 h-4 text-muted-foreground" />
+                  )}
+                </div>
+                <div className="flex flex-col min-w-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
+                  <span className="text-xs font-bold text-foreground truncate max-w-[120px]">
+                    {profile?.display_name || user?.email?.split('@')[0] || '使用者'}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground truncate max-w-[120px]">
+                    {user?.email}
+                  </span>
+                </div>
+              </NavLink>
+              {/* Logout button */}
+              <button
+                onClick={() => signOut()}
+                className="flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-300 min-w-0 mx-2 text-muted-foreground hover:bg-red-500/10 hover:text-red-400 w-[calc(100%-16px)] cursor-pointer"
+              >
+                <LogOut className="w-5 h-5 shrink-0" />
+                <span className="text-xs font-bold tracking-wide whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
+                  安全登出
+                </span>
+              </button>
+            </div>
+          ) : (
+            <NavLink
+              to="/auth"
+              className="flex items-center gap-4 px-4 py-4 rounded-2xl transition-all duration-300 min-w-0 mx-2 text-primary hover:bg-primary/10 border border-transparent hover:border-primary/20 w-[calc(100%-16px)]"
+            >
+              <LogIn className="w-5 h-5 shrink-0" />
+              <span className="text-sm font-bold tracking-wide whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
+                會員登入
+              </span>
+            </NavLink>
+          )
+        )}
       </div>
     </nav>
   )
