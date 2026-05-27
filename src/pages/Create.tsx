@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
-import { X, Loader2, RefreshCw, Sparkles, ImagePlus, ShieldAlert } from 'lucide-react'
+import { X, Loader2, RefreshCw, Sparkles, ImagePlus, ShieldAlert, History, Trash2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
@@ -41,6 +41,25 @@ export default function CreatePage() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [activeDraftId, setActiveDraftId] = useState<string | null>(null)
+  const [showDraftsModal, setShowDraftsModal] = useState(false)
+  const [isSavingDraft, setIsSavingDraft] = useState(false)
+
+  // 1.2 Fetch all drafts for the current user
+  const { data: drafts = [], refetch: refetchDrafts } = useQuery({
+    queryKey: ['character_drafts', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return []
+      const { data, error } = await (supabase
+        .from('character_drafts') as any)
+        .select('*')
+        .eq('author_id', user.id)
+        .order('updated_at', { ascending: false })
+      if (error) throw error
+      return data as any[]
+    },
+    enabled: !!user?.id,
+  })
 
   // 1. Fetch character if editing
   const { data: existingData } = useQuery({
@@ -246,17 +265,158 @@ export default function CreatePage() {
         clearTimeout(timeoutId)
       }
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['characters'] })
       queryClient.invalidateQueries({ queryKey: ['character', id] })
+      
+      // Clean up cloud draft if it was being used
+      if (activeDraftId) {
+        try {
+          await (supabase.from('character_drafts') as any).delete().eq('id', activeDraftId)
+        } catch (cleanupErr) {
+          console.error('Failed to clean up draft:', cleanupErr)
+        }
+      }
+      
       navigate('/')
     },
   })
 
   const handleReset = () => {
-    setForm(INITIAL_FORM)
-    setTagInput('')
-    removeAvatar()
+    modal.confirm('確定要清空所有填寫的資料嗎？此動作將無法復原。', {
+      title: '確認重置',
+      confirmText: '確定重置',
+      cancelText: '取消',
+      destructive: true,
+      onConfirm: () => {
+        setForm(INITIAL_FORM)
+        setTagInput('')
+        removeAvatar()
+        setActiveDraftId(null)
+      }
+    })
+  }
+
+  const handleLoadDraft = (draft: any) => {
+    setForm({
+      name: draft.name || '',
+      description: draft.description || '',
+      greeting: draft.greeting || '',
+      prompt: draft.prompt || '',
+      tags: draft.tags || [],
+      is_public: draft.is_public ?? false,
+    })
+    setActiveDraftId(draft.id)
+    if (draft.avatar_url) {
+      setAvatarPreview(draft.avatar_url)
+      setAvatarFile(null)
+    } else {
+      setAvatarPreview(null)
+      setAvatarFile(null)
+    }
+    setShowDraftsModal(false)
+  }
+
+  const handleDeleteDraft = async (draftId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    modal.confirm('確定要刪除此暫存資料嗎？此動作將無法復原。', {
+      title: '確認刪除',
+      confirmText: '確定刪除',
+      cancelText: '取消',
+      destructive: true,
+      onConfirm: async () => {
+        try {
+          const { error } = await (supabase
+            .from('character_drafts') as any)
+            .delete()
+            .eq('id', draftId)
+          if (error) throw error
+          if (activeDraftId === draftId) {
+            setActiveDraftId(null)
+          }
+          refetchDrafts()
+        } catch (err: any) {
+          modal.alert(`刪除暫存失敗: ${err.message || '未知錯誤'}`, { title: '刪除失敗' })
+        }
+      }
+    })
+  }
+
+  const handleSaveDraft = async () => {
+    if (!user) {
+      modal.alert('請先登入以使用雲端暫存功能。', { title: '未登入' })
+      return
+    }
+
+    const isEmpty = 
+      !form.name.trim() && 
+      !form.description.trim() && 
+      !form.greeting.trim() && 
+      !form.prompt.trim() && 
+      form.tags.length === 0 && 
+      !avatarPreview
+
+    if (isEmpty) {
+      modal.alert('所有欄位皆為空白，無法進行暫存。請至少填寫一個欄位或上傳角色圖片！', { title: '暫存失敗' })
+      return
+    }
+
+    setIsSavingDraft(true)
+    try {
+      let avatar_url = avatarPreview
+
+      if (avatarFile) {
+        const ext = avatarFile.name.split('.').pop()
+        const path = `${user.id}/draft_${Date.now()}.${ext}`
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(path, avatarFile, { upsert: true })
+
+        if (uploadError) throw new Error(`圖片上傳失敗: ${uploadError.message}`)
+
+        const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path)
+        avatar_url = urlData.publicUrl
+      }
+
+      const payload = {
+        author_id: user.id,
+        name: form.name.trim(),
+        description: form.description.trim(),
+        greeting: form.greeting.trim(),
+        prompt: form.prompt.trim(),
+        tags: form.tags,
+        is_public: form.is_public,
+        avatar_url,
+        updated_at: new Date().toISOString()
+      }
+
+      if (activeDraftId) {
+        const { error } = await (supabase
+          .from('character_drafts') as any)
+          .update(payload)
+          .eq('id', activeDraftId)
+
+        if (error) throw error
+        modal.alert('角色設定已成功更新。', { title: '暫存成功' })
+      } else {
+        const { data, error } = await (supabase
+          .from('character_drafts') as any)
+          .insert(payload)
+          .select('id')
+          .single()
+
+        if (error) throw error
+        if (data?.id) {
+          setActiveDraftId(data.id)
+        }
+        modal.alert('角色設定已成功暫存。', { title: '暫存成功' })
+      }
+      refetchDrafts()
+    } catch (err: any) {
+      modal.alert(`暫存儲存失敗: ${err.message || '未知錯誤'}`, { title: '儲存失敗' })
+    } finally {
+      setIsSavingDraft(false)
+    }
   }
 
   const inputClass = cn(
@@ -331,6 +491,16 @@ export default function CreatePage() {
             </div>
           </div>
 
+          {/* Header Action Button */}
+          {!id && (
+            <button
+              onClick={() => setShowDraftsModal(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold text-primary bg-primary/10 border border-primary/20 hover:brightness-110 active:scale-95 transition-all cursor-pointer shadow-sm"
+            >
+              <History className="w-3.5 h-3.5" />
+              歷史暫存 ({drafts.length})
+            </button>
+          )}
         </div>
       </div>
 
@@ -614,11 +784,17 @@ export default function CreatePage() {
 
                   <button
                     id="create-draft"
-                    onClick={() => modal.alert('已成功暫存草稿 (模擬)', { title: '草稿儲存' })}
+                    onClick={handleSaveDraft}
+                    disabled={isSavingDraft}
                     type="button"
-                    className="flex-1 px-4 py-3 rounded-full text-sm font-semibold text-foreground/70 bg-muted/60 border border-border hover:bg-muted/80 hover:text-foreground transition-all duration-200 active:scale-[0.98]"
+                    className="flex-1 flex items-center justify-center gap-1.5 px-4 py-3 rounded-full text-sm font-semibold text-foreground/70 bg-muted/60 border border-border hover:bg-muted/80 hover:text-foreground disabled:bg-muted disabled:text-muted-foreground/50 transition-all duration-200 active:scale-[0.98] cursor-pointer"
                   >
-                    暫存草稿
+                    {isSavingDraft ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <History className="w-3.5 h-3.5" />
+                    )}
+                    暫存
                   </button>
 
                   <button
@@ -652,6 +828,90 @@ export default function CreatePage() {
         onClose={() => setShowActivateModal(false)}
         onSuccess={refreshProfile}
       />
+
+      {/* ── Drafts List Modal ── */}
+      {showDraftsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-[500px] bg-card border border-border shadow-[0_32px_80px_rgba(0,0,0,0.5)] rounded-[28px] overflow-hidden flex flex-col max-h-[85vh] relative">
+            {/* Modal Header */}
+            <div className="px-6 py-5 border-b border-border/60 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <History className="w-5 h-5 text-primary" />
+                <h3 className="text-lg font-black text-foreground">歷史暫存</h3>
+              </div>
+              <button 
+                onClick={() => setShowDraftsModal(false)}
+                className="w-8 h-8 rounded-full bg-muted flex items-center justify-center hover:bg-border transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4 text-muted-foreground" />
+              </button>
+            </div>
+            
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-3">
+              {drafts.length === 0 ? (
+                <div className="py-12 text-center text-muted-foreground space-y-2">
+                  <History className="w-10 h-10 mx-auto text-muted-foreground/30 animate-pulse" />
+                  <p className="text-sm font-semibold">目前無任何暫存紀錄</p>
+                  <p className="text-xs text-muted-foreground/50">點擊表單下方的「暫存」即可保存進度</p>
+                </div>
+              ) : (
+                drafts.map((d) => (
+                  <div 
+                    key={d.id}
+                    onClick={() => handleLoadDraft(d)}
+                    className={cn(
+                      "group/draft p-4 rounded-2xl border transition-all duration-300 flex items-center justify-between gap-4 cursor-pointer",
+                      activeDraftId === d.id
+                        ? "bg-primary/10 border-primary shadow-lg shadow-primary/5"
+                        : "bg-muted/40 border-border hover:bg-muted hover:border-primary/20"
+                    )}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm text-foreground truncate max-w-[200px]">
+                          {d.name.trim() || '未命名暫存'}
+                        </span>
+                        {activeDraftId === d.id && (
+                          <span className="px-2 py-0.5 rounded-full bg-primary/25 border border-primary/30 text-[9px] font-black uppercase text-primary tracking-widest shrink-0">
+                            編輯中
+                          </span>
+                        )}
+                      </div>
+                      {d.description && (
+                        <p className="text-xs text-muted-foreground/70 truncate mt-1 leading-snug">
+                          {d.description}
+                        </p>
+                      )}
+                      <p className="text-[10px] text-muted-foreground/40 mt-1.5 font-medium">
+                        更新於：{new Date(d.updated_at).toLocaleString()}
+                      </p>
+                    </div>
+                    
+                    <button
+                      onClick={(e) => handleDeleteDraft(d.id, e)}
+                      className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:bg-red-500/15 hover:text-red-400 border border-transparent hover:border-red-500/20 active:scale-95 transition-all cursor-pointer shrink-0"
+                      title="刪除此暫存"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+            
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-border/60 bg-muted/30 flex justify-end">
+              <button
+                onClick={() => setShowDraftsModal(false)}
+                className="px-5 py-2.5 rounded-xl text-xs font-bold bg-white/5 border border-white/10 text-muted-foreground hover:bg-white/10 hover:text-foreground transition-all cursor-pointer"
+              >
+                關閉
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

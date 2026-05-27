@@ -28,7 +28,7 @@ const getNavItems = (isAdmin: boolean, isDesktop = false) => {
 
 // ── Mobile bottom tab bar ──────────────────────────────────────
 export function MobileNav() {
-  const { isAuthenticated, isLoading, isAdmin } = useAuth()
+  const { isAdmin } = useAuth()
   const location = useLocation()
   const navItems = getNavItems(isAdmin)
 
@@ -149,7 +149,7 @@ export function DesktopNav() {
                 </div>
                 <div className="flex flex-col min-w-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
                   <span className="text-xs font-bold text-foreground truncate max-w-[120px]">
-                    {profile?.display_name || user?.email?.split('@')[0] || '使用者'}
+                    {profile?.username || user?.email?.split('@')[0] || '使用者'}
                   </span>
                   <span className="text-[10px] text-muted-foreground truncate max-w-[120px]">
                     {user?.email}
